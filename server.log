@@ -1,0 +1,10 @@
+
+> inertia@1.0.0 dev:server
+> nodemon --exec tsx src/server/index.ts
+
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `tsx src/server/index.ts`[39m
+Server running at http://localhost:3000
