@@ -1,20 +1,30 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
-export default defineConfig({
-  plugins: [react()],
-  build: {
-    outDir: 'dist/client',
-    rollupOptions: {
-      input: {
-        app: './src/client/app.tsx'
+export default defineConfig(({ mode }) => {
+  return {
+    plugins: [react()],
+    build: {
+      emptyOutDir: false,
+      sourcemap: true,
+      outDir: 'public',
+      rollupOptions: {
+        input: resolve(__dirname, 'src/views/main.tsx'),
+        output: {
+          entryFileNames: 'app.js',
+          chunkFileNames: '[name].js',
+          assetFileNames: '[name].[ext]',
+          dir: 'public',
+          manualChunks: undefined,
+        }
       }
     },
-    manifest: true
-  },
-  resolve: {
-    alias: {
-      '@': '/src'
-    }
+    mode: mode,
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src')
+      }
+    },
   }
 })
