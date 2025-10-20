@@ -2,12 +2,12 @@ import { Router } from 'express';
 import { PublicController } from '../controllers/PublicController';
 import { AboutController } from '../controllers/AboutController';
 import { UserController } from '../controllers/UserController';
-import { InertiaMiddleware } from '../middleware/inertia';
+import { InertiaExpressMiddleware } from '../middleware/inertia';
 
 const route = Router();
 
 // Apply Inertia middleware to all routes
-route.use(InertiaMiddleware.run);
+route.use(InertiaExpressMiddleware.apply);
 
 // Define routes
 route.get('/', PublicController.index);

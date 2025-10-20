@@ -13,7 +13,7 @@ interface SharedData {
 	[key: string]: any;
 }
 
-export class InertiaAdapter {
+export class InertiaExpressAdapter {
 	private version: string;
 	private sharedData: SharedData = {};
 

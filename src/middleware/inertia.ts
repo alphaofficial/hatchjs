@@ -1,19 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { InertiaAdapter } from '../adapters/InertiaExpressAdapter';
+import { InertiaExpressAdapter } from '../adapters/InertiaExpressAdapter';
 
 // Extend Express Request to include inertia
 declare module 'express-serve-static-core' {
   interface Request {
-    inertia: InertiaAdapter;
+    inertia: InertiaExpressAdapter;
   }
   interface Response {
     inertia(component: string, props?: Record<string, any>): void;
   }
 }
 
-export class InertiaMiddleware {
-	static run(req: Request, res: Response, next: NextFunction) {
-		const inertia = new InertiaAdapter({
+export class InertiaExpressMiddleware {
+	static apply(req: Request, res: Response, next: NextFunction) {
+		const inertia = new InertiaExpressAdapter({
 			version: '1',
 		});
 
