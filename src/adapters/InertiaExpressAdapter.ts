@@ -60,14 +60,14 @@ export class InertiaAdapter {
 				});
 			}
 
-			return res.json({
+			return res.set({
+				'Vary': 'Accept',
+				'X-Inertia': 'true',
+			}).json({
 				component,
 				props: responseProps,
 				url: req.originalUrl,
 				version: this.version,
-			}).set({
-				'Vary': 'Accept',
-				'X-Inertia': 'true',
 			});
 		}
 

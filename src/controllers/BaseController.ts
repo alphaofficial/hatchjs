@@ -8,17 +8,15 @@ export class BaseController {
 		const inertia = req.inertia;
 		const result = inertia.render(req, res, componentName, componentProps);
 
-		// If result is already a response (for Inertia requests), it's handled by the adapter
-		if (!result || typeof result !== 'object' || !('component' in result)) {
-			return result;
+		if (res.headersSent) {
+			return;
 		}
 
-		// For non-Inertia requests, render the template
 		const templatePath = path.join(process.cwd(), 'public', 'template.html');
-		
+
 		try {
 			const template = fs.readFileSync(templatePath, 'utf-8');
-			
+
 			const html = template
 				.replace('{{TITLE}}', documentMetadata.title || 'Express Inertia App')
 				.replace('{{HEAD}}', documentMetadata.head || '')

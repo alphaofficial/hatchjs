@@ -1,14 +1,13 @@
 {
   "name": "inertia",
   "version": "1.0.0",
-  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "nodemon --exec tsx src/index.ts",
     "dev:client": "vite build --watch",
-    "build": "vite build && tsc --project tsconfig.server.json",
+    "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "tsc --project tsconfig.server.json",
     "start": "node dist/index.js",
