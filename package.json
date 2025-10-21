@@ -11,32 +11,54 @@
     "build:client": "vite build",
     "build:server": "tsc --project tsconfig.server.json",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migration:run": "mikro-orm migration:up",
+    "migration:revert": "mikro-orm migration:down",
+    "migration:create": "mikro-orm migration:create",
+    "migration:status": "mikro-orm migration:check",
+    "migration:generate": "mikro-orm migration:generate",
+    "db:seed": "mikro-orm seeder:run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@inertiajs/react": "^2.1.11",
+    "@mikro-orm/core": "^6.5.8",
+    "@mikro-orm/migrations": "^6.5.1",
+    "@mikro-orm/postgresql": "^6.5.1",
+    "@mikro-orm/seeder": "^6.5.1",
+    "@mikro-orm/sqlite": "^6.5.8",
     "@types/express": "^5.0.3",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
+    "dotenv-defaults": "^5.0.2",
     "express": "^5.1.0",
     "fs-extra": "^11.3.2",
+    "pg-connection-string": "^2.9.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@mikro-orm/cli": "^6.5.1",
     "@vitejs/plugin-react": "^5.0.3",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.10",
     "postcss": "^8.5.6",
+    "ts-node": "^10.9.2",
     "vite": "^6.4.0"
+  },
+  "mikro-orm": {
+    "configPaths": [
+      "./src/database/orm.config.ts",
+      "./dist/database/orm.config.js"
+    ]
   }
 }
