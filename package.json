@@ -29,16 +29,20 @@
     "@mikro-orm/postgresql": "^6.5.1",
     "@mikro-orm/seeder": "^6.5.1",
     "@mikro-orm/sqlite": "^6.5.8",
+    "@types/bcrypt": "^6.0.0",
+    "@types/express-session": "^1.18.2",
+    "bcrypt": "^6.0.0",
     "dotenv-defaults": "^5.0.2",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "pg-connection-string": "^2.9.1",
+    "pino-http": "^10.5.0",
+    "pino-pretty": "^13.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwindcss": "3.4.17",
     "typescript": "^5.9.2",
-    "zod": "^4.1.12",
-    "pino-http": "^10.5.0",
-    "pino-pretty": "^13.1.1"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@mikro-orm/cli": "^6.5.1",

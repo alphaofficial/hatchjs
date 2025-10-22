@@ -12,13 +12,23 @@ declare module 'express-serve-static-core' {
 }
 
 export class InertiaExpressMiddleware {
-	static apply(req: Request, res: Response, next: NextFunction) {
+	static async apply(req: Request, res: Response, next: NextFunction) {
 		const inertia = new InertiaExpressAdapter({
 			version: '1',
 		});
 
+		// Get current user for global sharing
+		const user = await req.user();
+		const isAuthenticated = req.is_authenticated();
+
 		inertia.share({
 			applicationName: 'Express Inertia App',
+			isAuthenticated,
+			user: user ? {
+				id: user.id,
+				name: user.name,
+				email: user.email
+			} : null,
 		});
 
 		req.inertia = inertia;
