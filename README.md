@@ -6,7 +6,7 @@ A complete Inertia.js implementation for Node.js with Express and React.
 
 - ✅ Modular Inertia.js adapter for Express
 - ✅ TypeScript support
-- ✅ React integration with @inertiajs/react  
+- ✅ React integration with @inertiajs/react
 - ✅ Asset versioning and conflict detection
 - ✅ Partial reloads support
 - ✅ Development workflow with hot reloading
@@ -79,8 +79,10 @@ export default function Home({ message }) {
 ## Routes
 
 - `/` - Home page
-- `/about` - About page  
+- `/about` - About page
 - `/users` - Users list
 - `/users/:id` - User detail page
 
 Navigate between pages to see Inertia.js in action!
+
+https://v3.tailwindcss.com/docs/installation
