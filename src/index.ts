@@ -2,12 +2,13 @@ import express from 'express';
 import path from 'path';
 import routes from './routes/route';
 import ormConfig from './database/orm.config';
-import { Example } from './models/Example';
 import { MikroORM, RequestContext } from '@mikro-orm/core';
+import { PinoLogger } from './logger/pinoLogger';
 
 declare module "express-serve-static-core" {
 	interface Request {
 		orm: MikroORM;
+    logger: PinoLogger;
 	}
 }
 
@@ -19,6 +20,7 @@ async function bootstrap() {
 
   app.use((req, _, next) => {
 		req.orm = orm;
+    req.logger = PinoLogger;
 		next();
 	});
 
@@ -28,6 +30,7 @@ async function bootstrap() {
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(PinoLogger.instance);
 
   // Serve static files from public directory (template.html)
   app.use('/', express.static(path.join(process.cwd(), 'public')));
