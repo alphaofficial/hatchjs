@@ -6,7 +6,7 @@ import {SqliteDriver} from "@mikro-orm/sqlite";
 const mikroOrmOptions: Options = {
 	entities: ["**/mappings/*.map.js"],
 	entitiesTs: ["**/mappings/*.map.ts"],
-	dbName: 'test-database',
+	dbName: 'express-inertia.db',
 	driver: SqliteDriver,
 	migrations: {
 		path: "dist/database/migrations",

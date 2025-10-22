@@ -13,3 +13,4 @@ public/*
 
 test-results/
 playwright-report/
+*.db
