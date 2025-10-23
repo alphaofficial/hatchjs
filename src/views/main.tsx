@@ -1,7 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { createInertiaApp } from '@inertiajs/react'
-import { resolvePageComponent } from '../utils/resolve-page-component'
 import './styles/global.css'
 
 createInertiaApp({

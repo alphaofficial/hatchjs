@@ -1,29 +1,26 @@
 import { Request, NextFunction } from 'express';
-import { RequestContext } from '@mikro-orm/core';
 import { User } from '../models/User';
 
-export function injectAuthUtilities(req: Request, _: any, next: NextFunction) {
-    // Add Laravel-style auth utilities to request
-    req.user = async (): Promise<User | null> => {
-        const userId = req.user_id();
-        if (!userId) return null;
-        
-        const em = RequestContext.getEntityManager();
-        if (!em) return null;
-        
-        return em.findOne(User, { id: userId });
-    };
-
+export function injectAuthHelpers(req: Request, _: any, next: NextFunction) {
     req.user_id = (): string | null => {
         return (req.session as any)?.userId || null;
     };
 
+    req.user = async (): Promise<User | null> => {
+        if (!req.user_id()) return null;
+
+        const em = req.orm.em;
+        return em.findOne(User, { id:  req.user_id() }, {
+            cache: 300000, // cache for 5 minutes
+        });
+    };
+
     req.is_authenticated = (): boolean => {
-        return !!(req.session as any)?.userId;
+        return Boolean((req.session as any)?.userId);
     };
 
     req.is_guest = (): boolean => {
-        return !(req.session as any)?.userId;
+        return Boolean(!(req.session as any)?.userId);
     };
 
     req.authenticate = (user: User): void => {
