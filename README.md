@@ -190,16 +190,6 @@ export default function Home({ message }) {
 }
 ```
 
-## Routes
-
-- `/` - Home page
-- `/about` - About page
-- `/users` - Users list
-- `/users/:id` - User detail page
-- `/login` - Login page
-- `/register` - Registration page
-- `/dashboard` - User dashboard (authenticated)
-
 Navigate between pages to see Inertia.js in action!
 
 https://v3.tailwindcss.com/docs/installation
