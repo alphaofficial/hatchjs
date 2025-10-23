@@ -33,7 +33,6 @@ export class InertiaExpressMiddleware {
 
 		req.inertia = inertia;
 
-		// Add render method to response (just calls the adapter)
 		res.inertia = (component: string, props: Record<string, any> = {}) => {
 			return inertia.render(req, res, component, props);
 		};

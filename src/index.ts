@@ -24,7 +24,7 @@ declare module "express-serve-static-core" {
 }
 
 const app = express();
-const port = 3000;
+const port = variables.PORT
 
 async function bootstrap() {
   const orm = await MikroORM.init(ormConfig);
@@ -47,6 +47,8 @@ async function bootstrap() {
     next();
   });
 
+
+  // Session middleware
   app.use(session({
     store: sessionStore,
     secret: variables.SESSION_SECRET,
@@ -59,9 +61,10 @@ async function bootstrap() {
     }
   }));
 
+  // inject authentication helper methods into request
   app.use((req, _, next) => {
-    const { injectAuthUtilities } = require('./middleware/authUtils');
-    injectAuthUtilities(req, _, next);
+    const { injectAuthHelpers } = require('./middleware/authUtils');
+    injectAuthHelpers(req, _, next);
   });
 
   // Middleware
@@ -81,7 +84,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch(err => {
-  console.error('Error during bootstrap:', err);
+  PinoLogger.error('App', "Failed to start server", err);
 });
 
 export default app;
