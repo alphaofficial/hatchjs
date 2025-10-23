@@ -7,24 +7,23 @@ import { InertiaExpressMiddleware } from '../middleware/inertia';
 import { auth, guest } from '../middleware/auth';
 
 const route = Router();
-const authController = new AuthController();
 
 // Apply Inertia middleware to all routes
 route.use(InertiaExpressMiddleware.apply);
 
 // Guest routes (only accessible when not authenticated)
-route.get('/login', guest, authController.showLogin.bind(authController));
-route.post('/login', guest, authController.login.bind(authController));
-route.get('/register', guest, authController.showRegister.bind(authController));
-route.post('/register', guest, authController.register.bind(authController));
+route.get('/login', guest, AuthController.showLogin);
+route.post('/login', guest, AuthController.login);
+route.get('/register', guest, AuthController.showRegister);
+route.post('/register', guest, AuthController.register);
 
 // Public routes
 route.get('/', PublicController.index);
-route.get('/about', AboutController.index);
 
 // Protected routes (require authentication)
-route.get('/dashboard', auth, authController.dashboard.bind(authController));
-route.post('/logout', auth, authController.logout.bind(authController));
+route.get('/about', auth, AboutController.index);
+route.get('/home', auth, AuthController.dashboard);
+route.post('/logout', auth, AuthController.logout);
 route.get('/users', auth, UserController.index);
 route.get('/users/:id', auth, UserController.show);
 

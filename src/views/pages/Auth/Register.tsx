@@ -24,116 +24,133 @@ export default function Register({ errors }: RegisterProps) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Create your account
-                </h2>
+        <div className="min-h-screen flex">
+            <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+                <div className="mx-auto w-full max-w-sm lg:w-96">
+                    <div>
+                        <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+                            Create account
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Already have an account?{' '}
+                            <a href="/login" className="font-medium text-black hover:text-black">
+                                Sign in
+                            </a>
+                        </p>
+                    </div>
+
+                    <div className="mt-8">
+                        <form className="space-y-6" onSubmit={handleSubmit}>
+                            <div>
+                                <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">
+                                    Full name
+                                </label>
+                                <div className="mt-2">
+                                    <input
+                                        id="name"
+                                        name="name"
+                                        type="text"
+                                        autoComplete="name"
+                                        required
+                                        value={data.name}
+                                        onChange={e => setData('name', e.target.value)}
+                                        className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3"
+                                        placeholder="Enter your full name"
+                                    />
+                                    {errors?.name && (
+                                        <p className="mt-2 text-sm text-red-600">{errors.name[0]}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                                    Email address
+                                </label>
+                                <div className="mt-2">
+                                    <input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        autoComplete="email"
+                                        required
+                                        value={data.email}
+                                        onChange={e => setData('email', e.target.value)}
+                                        className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3"
+                                        placeholder="Enter your email"
+                                    />
+                                    {errors?.email && (
+                                        <p className="mt-2 text-sm text-red-600">{errors.email[0]}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
+                                    Password
+                                </label>
+                                <div className="mt-2">
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        autoComplete="new-password"
+                                        required
+                                        value={data.password}
+                                        onChange={e => setData('password', e.target.value)}
+                                        className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3"
+                                        placeholder="Create a password"
+                                    />
+                                    {errors?.password && (
+                                        <p className="mt-2 text-sm text-red-600">{errors.password[0]}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="password_confirmation" className="block text-sm font-medium leading-6 text-gray-900">
+                                    Confirm password
+                                </label>
+                                <div className="mt-2">
+                                    <input
+                                        id="password_confirmation"
+                                        name="password_confirmation"
+                                        type="password"
+                                        autoComplete="new-password"
+                                        required
+                                        value={data.password_confirmation}
+                                        onChange={e => setData('password_confirmation', e.target.value)}
+                                        className="block w-full rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3"
+                                        placeholder="Confirm your password"
+                                    />
+                                    {errors?.password_confirmation && (
+                                        <p className="mt-2 text-sm text-red-600">{errors.password_confirmation[0]}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="flex w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:opacity-50"
+                                >
+                                    {processing ? 'Creating account...' : 'Create account'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                Name
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="name"
-                                    name="name"
-                                    type="text"
-                                    autoComplete="name"
-                                    required
-                                    value={data.name}
-                                    onChange={e => setData('name', e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                />
-                                {errors?.name && (
-                                    <p className="mt-2 text-sm text-red-600">{errors.name[0]}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email address
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    value={data.email}
-                                    onChange={e => setData('email', e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                />
-                                {errors?.email && (
-                                    <p className="mt-2 text-sm text-red-600">{errors.email[0]}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    required
-                                    value={data.password}
-                                    onChange={e => setData('password', e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                />
-                                {errors?.password && (
-                                    <p className="mt-2 text-sm text-red-600">{errors.password[0]}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
-                                Confirm Password
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="password_confirmation"
-                                    name="password_confirmation"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    required
-                                    value={data.password_confirmation}
-                                    onChange={e => setData('password_confirmation', e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                />
-                                {errors?.password_confirmation && (
-                                    <p className="mt-2 text-sm text-red-600">{errors.password_confirmation[0]}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                            >
-                                {processing ? 'Creating account...' : 'Create account'}
-                            </button>
-                        </div>
-
+            <div className="relative hidden w-0 flex-1 lg:block">
+                <div className="absolute inset-0 bg-black">
+                    <div className="flex h-full items-center justify-center">
                         <div className="text-center">
-                            <a href="/login" className="text-indigo-600 hover:text-indigo-500">
-                                Already have an account? Sign in
-                            </a>
+                            <h1 className="text-4xl font-bold text-white mb-4">Express Inertia</h1>
+                            <p className="text-xl text-black">Modern web development made simple</p>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

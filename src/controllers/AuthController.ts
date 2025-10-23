@@ -21,15 +21,19 @@ const registerSchema = z.object({
 
 export class AuthController extends BaseController {
 
-    public async showLogin(req: Request, res: Response) {
-        return this.render(req, res, 'Auth/Login');
+    static async showLogin(req: Request, res: Response) {
+        const instance = new AuthController();
+        return instance.render(req, res, 'Auth/Login');
     }
 
-    public async showRegister(req: Request, res: Response) {
-        return this.render(req, res, 'Auth/Register');
+    static async showRegister(req: Request, res: Response) {
+        const instance = new AuthController();
+        return instance.render(req, res, 'Auth/Register');
     }
 
-    public async login(req: Request, res: Response) {
+    static async login(req: Request, res: Response) {
+        const instance = new AuthController();
+
         try {
             const validatedData = loginSchema.parse(req.body);
             const em = req.orm.em;
@@ -37,17 +41,17 @@ export class AuthController extends BaseController {
             const user = await em.findOne(User, { email: validatedData.email });
 
             if (!user || !(await Hash.check(validatedData.password, user.password))) {
-                return this.render(req, res, 'Auth/Login', {
+                return instance.render(req, res, 'Auth/Login', {
                     errors: { email: 'Invalid credentials' }
                 });
             }
 
             req.authenticate(user);
-            return res.redirect('/dashboard');
+            return res.redirect('/home');
 
         } catch (error) {
             if (error instanceof z.ZodError) {
-                return this.render(req, res, 'Auth/Login', {
+                return instance.render(req, res, 'Auth/Login', {
                     errors: error.flatten().fieldErrors
                 });
             }
@@ -55,14 +59,16 @@ export class AuthController extends BaseController {
         }
     }
 
-    public async register(req: Request, res: Response) {
+    static async register(req: Request, res: Response) {
+        const instance = new AuthController();
+
         try {
             const validatedData = registerSchema.parse(req.body);
             const em = req.orm.em;
 
             const existingUser = await em.findOne(User, { email: validatedData.email });
             if (existingUser) {
-                return this.render(req, res, 'Auth/Register', {
+                return instance.render(req, res, 'Auth/Register', {
                     errors: { email: 'Email already taken' }
                 });
             }
@@ -79,11 +85,11 @@ export class AuthController extends BaseController {
             await em.persistAndFlush(user);
 
             req.authenticate(user);
-            return res.redirect('/dashboard');
+            return res.redirect('/home');
 
         } catch (error) {
             if (error instanceof z.ZodError) {
-                return this.render(req, res, 'Auth/Register', {
+                return instance.render(req, res, 'Auth/Register', {
                     errors: error.flatten().fieldErrors
                 });
             }
@@ -91,7 +97,7 @@ export class AuthController extends BaseController {
         }
     }
 
-    public async logout(req: Request, res: Response) {
+    static async logout(req: Request, res: Response) {
         try {
             await req.logout();
             res.redirect('/login');
@@ -101,8 +107,9 @@ export class AuthController extends BaseController {
         }
     }
 
-    public async dashboard(req: Request, res: Response) {
+    static async dashboard(req: Request, res: Response) {
+        const instance = new AuthController();
         const user = await req.user();
-        return this.render(req, res, 'Auth/Dashboard', { user });
+        return instance.render(req, res, 'Dashboard', { user });
     }
 }

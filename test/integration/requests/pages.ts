@@ -1,12 +1,11 @@
+import supertest from "supertest";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
-import supertest from "supertest";
-import { MikroORM } from "@mikro-orm/core";
 import { User } from "../../../src/models/User";
 
 describe("Pages Integration Tests", () => {
 	let app: any;
-	let database: MikroORM;
+	let database: any;
 	let testDataFactory: TestDataFactory;
 
 	beforeAll(async () => {
@@ -16,8 +15,8 @@ describe("Pages Integration Tests", () => {
 		testDataFactory = new TestDataFactory(database);
 	});
 
-	afterAll(async () => {
-		await database.close();
+	beforeEach(async () => {
+		await testDataFactory.cleanupAll();
 	});
 
 	beforeEach(async () => {
@@ -26,14 +25,17 @@ describe("Pages Integration Tests", () => {
 
 	describe("Public Pages", () => {
 		describe("GET /", () => {
-			it("should redirect unauthenticated users to login", async () => {
+			it("should render landing page for unauthenticated users", async () => {
 				const response = await supertest(app).get("/");
 				
-				expect(response.status).toBe(302);
-				expect(response.headers.location).toBe("/login");
+				expect(response.status).toBe(200);
+				
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Home");
+				expect(pageData.props.applicationName).toBe("Express Inertia");
 			});
 
-			it("should redirect authenticated users to dashboard", async () => {
+			it("should render landing page for authenticated users", async () => {
 				const user = await testDataFactory.createUser();
 				const agent = supertest.agent(app);
 				
@@ -43,14 +45,24 @@ describe("Pages Integration Tests", () => {
 
 				const response = await agent.get("/");
 				
-				expect(response.status).toBe(302);
-				expect(response.headers.location).toBe("/dashboard");
+				expect(response.status).toBe(200);
+				
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Home");
+				expect(pageData.props.applicationName).toBe("Express Inertia");
 			});
 		});
 
 		describe("GET /about", () => {
-			it("should render About page with correct data", async () => {
-				const response = await supertest(app).get("/about");
+			it("should render About page for authenticated users", async () => {
+				const user = await testDataFactory.createUser();
+				const agent = supertest.agent(app);
+				
+				await agent
+					.post("/login")
+					.send({ email: user.email, password: "password123" });
+
+				const response = await agent.get("/about");
 				
 				expect(response.status).toBe(200);
 				expect(response.text).toContain("About Us");
@@ -60,6 +72,13 @@ describe("Pages Integration Tests", () => {
 				expect(pageData.component).toBe("About");
 				expect(pageData.props.title).toBe("About Us");
 				expect(pageData.props.description).toBe("This is an Inertia.js app running on Express with React.");
+			});
+
+			it("should redirect unauthenticated users to login", async () => {
+				const response = await supertest(app).get("/about");
+				
+				expect(response.status).toBe(302);
+				expect(response.headers.location).toBe("/login");
 			});
 		});
 	});
@@ -89,7 +108,7 @@ describe("Pages Integration Tests", () => {
 				const response = await agent.get("/login");
 				
 				expect(response.status).toBe(302);
-				expect(response.headers.location).toBe("/dashboard");
+				expect(response.headers.location).toBe("/home");
 			});
 		});
 
@@ -105,7 +124,7 @@ describe("Pages Integration Tests", () => {
 					.send({ email: "test@example.com", password: "password123" });
 
 				expect(response.status).toBe(302);
-				expect(response.headers.location).toBe("/dashboard");
+				expect(response.headers.location).toBe("/home");
 			});
 
 			it("should return errors for invalid credentials", async () => {
@@ -159,7 +178,7 @@ describe("Pages Integration Tests", () => {
 					.send(userData);
 
 				expect(response.status).toBe(302);
-				expect(response.headers.location).toBe("/dashboard");
+				expect(response.headers.location).toBe("/home");
 
 				const em = database.em.fork();
 				const createdUser = await em.findOne(User, { email: "john@example.com" });
@@ -208,7 +227,7 @@ describe("Pages Integration Tests", () => {
 			});
 		});
 
-		describe("GET /dashboard", () => {
+		describe("GET /home", () => {
 			it("should render dashboard for authenticated users", async () => {
 				const user = await testDataFactory.createUser({
 					name: "John Doe",
@@ -220,19 +239,19 @@ describe("Pages Integration Tests", () => {
 					.post("/login")
 					.send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/dashboard");
+				const response = await agent.get("/home");
 				
 				expect(response.status).toBe(200);
 				
 				const pageData = extractInertiaPageData(response.text);
-				expect(pageData.component).toBe("Auth/Dashboard");
+				expect(pageData.component).toBe("Dashboard");
 				expect(pageData.props.user).toBeDefined();
 				expect(pageData.props.user.name).toBe("John Doe");
 				expect(pageData.props.user.email).toBe("john@example.com");
 			});
 
 			it("should redirect unauthenticated users to login", async () => {
-				const response = await supertest(app).get("/dashboard");
+				const response = await supertest(app).get("/home");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
@@ -253,7 +272,7 @@ describe("Pages Integration Tests", () => {
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
 
-				const dashboardResponse = await agent.get("/dashboard");
+				const dashboardResponse = await agent.get("/home");
 				expect(dashboardResponse.status).toBe(302);
 				expect(dashboardResponse.headers.location).toBe("/login");
 			});

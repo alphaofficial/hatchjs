@@ -10,7 +10,7 @@ export function auth(req: Request, res: Response, next: NextFunction) {
 
 export function guest(req: Request, res: Response, next: NextFunction) {
     if (req.is_authenticated()) {
-        return res.redirect('/dashboard');
+        return res.redirect('/home');
     } else {
         next();
     }

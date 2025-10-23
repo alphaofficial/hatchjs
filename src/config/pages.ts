@@ -1,3 +1,3 @@
-const VIEWS = ['About', 'Home', 'User', 'Users', 'Auth/Login', 'Auth/Register', 'Auth/Dashboard'] as const;
+const VIEWS = ['About', 'Home', 'User', 'Users', 'Dashboard', 'Auth/Login', 'Auth/Register'] as const;
 
 export type PageName = (typeof VIEWS)[number];
