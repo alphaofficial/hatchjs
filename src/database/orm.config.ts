@@ -2,11 +2,12 @@ import "dotenv-defaults/config";
 import type { Options } from "@mikro-orm/core";
 import { Migrator } from "@mikro-orm/migrations";
 import { SqliteDriver } from "@mikro-orm/sqlite";
+import { env } from "@/config/variables";
 
 const mikroOrmOptions: Options = {
 	entities: ["**/mappings/*.map.js"],
 	entitiesTs: ["**/mappings/*.map.ts"],
-	dbName: 'express-inertia.db',
+	dbName: env("DB_PATH", "express-inertia.db") as string,
 	driver: SqliteDriver,
 	pool: {
 		// WAL (Write-Ahead Log):
