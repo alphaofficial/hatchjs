@@ -13,6 +13,7 @@ import { SessionStore } from './middleware/sessionStore';
 declare module "express-serve-static-core" {
 	interface Request {
 		orm: MikroORM;
+    entityManager: MikroORM['em'];
     logger: PinoLogger;
     user(): Promise<User | null>;
     user_id(): User["id"] | null;
@@ -32,6 +33,7 @@ async function bootstrap() {
 
   app.use((req, _, next) => {
 		req.orm = orm;
+    req.entityManager = orm.em.fork();
     req.logger = PinoLogger;
 		next();
 	});

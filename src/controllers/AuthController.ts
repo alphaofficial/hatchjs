@@ -5,7 +5,7 @@ import { User } from '../models/User';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(1)
 });
 
@@ -36,7 +36,7 @@ export class AuthController extends BaseController {
 
         try {
             const validatedData = loginSchema.parse(req.body);
-            const em = req.orm.em;
+            const em = req.entityManager;
 
             const user = await em.findOne(User, { email: validatedData.email });
 
