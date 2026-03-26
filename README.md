@@ -193,3 +193,10 @@ export default function Home({ message }) {
 Navigate between pages to see Inertia.js in action!
 
 https://v3.tailwindcss.com/docs/installation
+
+
+## database schemas
+this project uses mikro orm for the data layer
+schemas are created using entityschema with mapper to a domain class
+thats the preferred approach
+never user decorators!
