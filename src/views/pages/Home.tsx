@@ -310,18 +310,18 @@ export default function Home(pageProps: Props) {
 
 				{/* FAQ */}
 				<section id="faq" className="border-b border-gray-200 bg-gray-50">
-					<div className="mx-auto max-w-6xl px-6 py-24 text-center">
+					<div className="mx-auto max-w-6xl px-6 py-24">
 						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
 							FAQ
 						</p>
 						<h2 className="mt-4 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
 							Questions you might be asking.
 						</h2>
-						<dl className="mx-auto mt-16 max-w-3xl divide-y divide-gray-300 text-center">
+						<dl className="mt-16 divide-y divide-gray-300">
 							{FAQS.map((qa) => (
-								<div key={qa.q} className="py-8">
-									<dt className="text-lg font-bold text-gray-900">{qa.q}</dt>
-									<dd className="mx-auto mt-3 max-w-2xl text-base text-gray-600">{qa.a}</dd>
+								<div key={qa.q} className="py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+									<dt className="text-lg font-bold text-gray-900 lg:col-span-1">{qa.q}</dt>
+									<dd className="text-base text-gray-600 lg:col-span-2">{qa.a}</dd>
 								</div>
 							))}
 						</dl>

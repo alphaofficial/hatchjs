@@ -17,7 +17,9 @@
 set -euo pipefail
 
 REPO_URL="${HATCH_REPO:-https://github.com/alphaofficial/express-inertia.git}"
-BRANCH="main"
+REPO_API="${HATCH_REPO_API:-https://api.github.com/repos/alphaofficial/express-inertia}"
+REF=""           # Resolved later — defaults to latest released tag
+REF_KIND=""      # "tag" or "branch"
 DO_INSTALL=1
 DO_GIT=1
 QUICK=0
@@ -66,7 +68,9 @@ while [ $# -gt 0 ]; do
     --quick)        QUICK=1 ;;
     --no-install)   DO_INSTALL=0 ;;
     --no-git)       DO_GIT=0 ;;
-    --branch)       shift; BRANCH="${1:-main}" ;;
+    --branch)       shift; REF="${1:-main}"; REF_KIND="branch" ;;
+    --tag)          shift; REF="${1:?}"; REF_KIND="tag" ;;
+    --ref)          shift; REF="${1:?}"; REF_KIND="branch" ;;
     -h|--help)
       cat <<EOF
 Hatch JS installer
@@ -76,7 +80,8 @@ Usage:
 
 Options:
   --quick           Skip prompts and use defaults
-  --branch <name>   Branch to clone (default: main)
+  --tag <name>      Pin a specific release tag (default: latest release)
+  --branch <name>   Clone a branch instead of a release tag
   --no-install      Skip 'npm install' and migrations
   --no-git          Skip 'git init' inside the new project
   -h, --help        Show this help
@@ -149,10 +154,30 @@ esac
 
 [ ! -e "$APP_SLUG" ] || die "Target directory '$APP_SLUG' already exists"
 
+# --- resolve ref (latest released tag unless overridden) -------------------
+if [ -z "$REF" ]; then
+  info "Resolving latest released version"
+  LATEST=""
+  if command -v curl >/dev/null 2>&1; then
+    LATEST=$(curl -fsSL "$REPO_API/releases/latest" 2>/dev/null \
+      | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' \
+      | head -n1 || true)
+  fi
+  if [ -n "$LATEST" ]; then
+    REF="$LATEST"
+    REF_KIND="tag"
+    ok "Latest release: $REF"
+  else
+    warn "Could not resolve latest release — falling back to main branch"
+    REF="main"
+    REF_KIND="branch"
+  fi
+fi
+
 # --- clone ------------------------------------------------------------------
 echo
-info "Cloning $REPO_URL ($BRANCH) into $APP_SLUG"
-git clone --depth=1 --branch "$BRANCH" --quiet "$REPO_URL" "$APP_SLUG"
+info "Cloning $REPO_URL ($REF_KIND: $REF) into $APP_SLUG"
+git clone --depth=1 --branch "$REF" --quiet "$REPO_URL" "$APP_SLUG"
 rm -rf "$APP_SLUG/.git"
 ok "Source fetched"
 
@@ -166,7 +191,7 @@ ok "Removed test/ and install.sh"
 
 # --- patch package.json -----------------------------------------------------
 info "Updating package.json"
-APP_SLUG="$APP_SLUG" APP_DESC="$APP_DESC" APP_AUTHOR="$APP_AUTHOR" \
+APP_SLUG="$APP_SLUG" APP_DESC="$APP_DESC" APP_AUTHOR="$APP_AUTHOR" HATCH_REF="$REF" HATCH_REF_KIND="$REF_KIND" \
   node - <<'NODE'
 const fs = require('fs');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -176,6 +201,7 @@ pkg.version = '0.1.0';
 pkg.description = process.env.APP_DESC;
 pkg.author = process.env.APP_AUTHOR;
 pkg.license = 'MIT';
+pkg.hatch = { version: process.env.HATCH_REF, kind: process.env.HATCH_REF_KIND };
 
 if (pkg.scripts) {
   delete pkg.scripts.test;
