@@ -20,7 +20,7 @@ export class UserController extends BaseController {
 	}
 
 	static async show(req: Request, res: Response) {
-		const { id } = req.params;
+		const id = req.params.id as string;
 		const instance = new UserController();
 		const user = instance.userDirectory.find((u: User) => u.id === parseInt(id));
 		
