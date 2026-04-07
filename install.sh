@@ -187,6 +187,83 @@ cd "$APP_SLUG"
 rm -rf test
 rm -f install.sh Dockerfile ecosystem.config.js start.sh
 
+# --- replace marketing landing with a minimal starter Home -----------------
+cat > src/views/pages/Home.tsx <<'TSX'
+import { Head } from '@inertiajs/react';
+
+interface Props {
+	applicationName: string;
+}
+
+export default function Home({ applicationName }: Props) {
+	return (
+		<>
+			<Head>
+				<title>{applicationName}</title>
+			</Head>
+			<main className="min-h-screen bg-white text-gray-900 antialiased flex items-center justify-center px-6">
+				<div className="max-w-xl text-center">
+					<div className="mx-auto mb-6 inline-flex h-12 w-12 items-center justify-center rounded-md bg-gray-900 text-white text-lg font-bold">
+						{applicationName.charAt(0)}
+					</div>
+					<h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+						Welcome to {applicationName}
+					</h1>
+					<p className="mt-6 text-lg text-gray-600">
+						Edit <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm">src/views/pages/Home.tsx</code> and save to reload.
+					</p>
+					<p className="mt-8 text-sm text-gray-500">
+						See the{' '}
+						<a
+							href="https://github.com/alphaofficial/hatchjs/blob/main/docs/DEVELOPER_GUIDE.md"
+							className="font-semibold text-gray-900 underline underline-offset-2 hover:no-underline"
+						>
+							developer guide
+						</a>{' '}
+						to add controllers, pages, and models.
+					</p>
+				</div>
+			</main>
+		</>
+	);
+}
+TSX
+
+# --- strip demo pages, controllers, and routes ------------------------------
+# Keep User model + auth middleware + sessions as plumbing, but remove all
+# auth UI and demo pages. Devs add their own routes/pages from a clean slate.
+rm -f \
+  src/views/pages/About.tsx \
+  src/views/pages/Dashboard.tsx \
+  src/views/pages/Users.tsx \
+  src/views/pages/User.tsx \
+  src/views/pages/Auth/Login.tsx \
+  src/views/pages/Auth/Register.tsx \
+  src/controllers/AboutController.ts \
+  src/controllers/AuthController.ts \
+  src/controllers/UserController.ts
+rmdir src/views/pages/Auth 2>/dev/null || true
+
+cat > src/config/pages.ts <<'TS'
+const VIEWS = ['Home', 'Error'] as const;
+
+export type PageName = (typeof VIEWS)[number];
+TS
+
+cat > src/routes/route.ts <<'TS'
+import { Router } from 'express';
+import { PublicController } from '../controllers/PublicController';
+import { InertiaExpressMiddleware } from '../middleware/inertia';
+
+const route = Router();
+
+route.use(InertiaExpressMiddleware.apply);
+
+route.get('/', PublicController.index);
+
+export default route;
+TS
+
 # --- patch package.json -----------------------------------------------------
 info "Updating package.json"
 APP_SLUG="$APP_SLUG" APP_DESC="$APP_DESC" APP_AUTHOR="$APP_AUTHOR" HATCH_REF="$REF" HATCH_REF_KIND="$REF_KIND" \
