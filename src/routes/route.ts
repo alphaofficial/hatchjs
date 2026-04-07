@@ -12,13 +12,14 @@ const route = Router();
 // Apply Inertia middleware to all routes
 route.use(InertiaExpressMiddleware.apply);
 
-const authLimiter = authRateLimit();
+// Apply rate limiter once to all sensitive auth POSTs
+route.post(['/login', '/register'], authRateLimit());
 
 // Guest routes (only accessible when not authenticated)
 route.get('/login', guest, AuthController.showLogin);
-route.post('/login', authLimiter, guest, AuthController.login);
+route.post('/login', guest, AuthController.login);
 route.get('/register', guest, AuthController.showRegister);
-route.post('/register', authLimiter, guest, AuthController.register);
+route.post('/register', guest, AuthController.register);
 
 // Public routes
 route.get('/', PublicController.index);
