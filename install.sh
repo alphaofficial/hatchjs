@@ -3,10 +3,10 @@
 # Hatch JS installer — scaffolds a fullstack starter into a fresh directory.
 #
 # Interactive (recommended):
-#   curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash
 #
 # Non-interactive (defaults):
-#   curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash -s -- --quick my-app
+#   curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash -s -- --quick my-app
 #
 # Flags:
 #   --quick               Skip prompts and use defaults
@@ -16,8 +16,8 @@
 #
 set -euo pipefail
 
-REPO_URL="${HATCH_REPO:-https://github.com/alphaofficial/express-inertia.git}"
-REPO_API="${HATCH_REPO_API:-https://api.github.com/repos/alphaofficial/express-inertia}"
+REPO_URL="${HATCH_REPO:-https://github.com/alphaofficial/hatchjs.git}"
+REPO_API="${HATCH_REPO_API:-https://api.github.com/repos/alphaofficial/hatchjs}"
 REF=""           # Resolved later — defaults to latest released tag
 REF_KIND=""      # "tag" or "branch"
 DO_INSTALL=1

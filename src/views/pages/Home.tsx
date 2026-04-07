@@ -8,7 +8,7 @@ interface Props {
 }
 
 const INSTALL_CMD =
-	'curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash';
+	'curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash';
 
 function CopyButton({ text }: { text: string }) {
 	const [copied, setCopied] = useState(false);
@@ -95,7 +95,7 @@ export default function Home(pageProps: Props) {
 							<a href="#how" className="hover:text-gray-900">How it works</a>
 							<a href="#faq" className="hover:text-gray-900">FAQ</a>
 							<a
-								href="https://github.com/alphaofficial/express-inertia"
+								href="https://github.com/alphaofficial/hatchjs"
 								className="hover:text-gray-900"
 							>
 								GitHub
@@ -143,7 +143,7 @@ export default function Home(pageProps: Props) {
 								</Link>
 							)}
 							<a
-								href="https://github.com/alphaofficial/express-inertia"
+								href="https://github.com/alphaofficial/hatchjs"
 								className="inline-flex items-center justify-center rounded-sm border border-gray-900 px-5 py-3 text-sm font-bold uppercase tracking-wider text-gray-900 hover:bg-gray-900 hover:text-white"
 							>
 								View on GitHub
@@ -342,13 +342,13 @@ export default function Home(pageProps: Props) {
 						</p>
 						<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
 							<a
-								href="https://github.com/alphaofficial/express-inertia"
+								href="https://github.com/alphaofficial/hatchjs"
 								className="inline-flex items-center justify-center rounded-sm bg-white px-5 py-3 text-sm font-bold uppercase tracking-wider text-gray-900 hover:bg-gray-100"
 							>
 								Star on GitHub
 							</a>
 							<a
-								href="https://github.com/alphaofficial/express-inertia#readme"
+								href="https://github.com/alphaofficial/hatchjs#readme"
 								className="inline-flex items-center justify-center rounded-sm border border-white px-5 py-3 text-sm font-bold uppercase tracking-wider text-white hover:bg-white hover:text-gray-900"
 							>
 								Read the docs →
@@ -364,17 +364,17 @@ export default function Home(pageProps: Props) {
 						</p>
 						<ul className="flex items-center gap-x-6 text-xs text-gray-500">
 							<li>
-								<a href="https://github.com/alphaofficial/express-inertia" className="hover:text-gray-900">
+								<a href="https://github.com/alphaofficial/hatchjs" className="hover:text-gray-900">
 									GitHub
 								</a>
 							</li>
 							<li>
-								<a href="https://github.com/alphaofficial/express-inertia#readme" className="hover:text-gray-900">
+								<a href="https://github.com/alphaofficial/hatchjs#readme" className="hover:text-gray-900">
 									Docs
 								</a>
 							</li>
 							<li>
-								<a href="https://github.com/alphaofficial/express-inertia/issues" className="hover:text-gray-900">
+								<a href="https://github.com/alphaofficial/hatchjs/issues" className="hover:text-gray-900">
 									Issues
 								</a>
 							</li>

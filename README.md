@@ -9,13 +9,13 @@ A batteries-included fullstack starter built on **Express 5**, **Inertia.js**, *
 Interactive scaffold (recommended):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash
 ```
 
 Non-interactive (defaults, fastest):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash -s -- --quick my-app
+curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash -s -- --quick my-app
 ```
 
 The installer:
