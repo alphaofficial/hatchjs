@@ -378,31 +378,3 @@ The cloned project records the version it was scaffolded from in
 ```json
 { "hatch": { "version": "2026.04.07", "kind": "tag" } }
 ```
-
-### Upgrading a cloned project (future work)
-
-Once a project has been scaffolded, it diverges from upstream — its
-`package.json`, models, controllers, and routes are all custom. A literal
-`git pull` from the starter is therefore not safe.
-
-A reasonable upgrade strategy (not yet implemented) would be:
-
-1. **Track upstream as a remote.** During `install.sh`, add the starter as a
-   detached `upstream` git remote pinned to the release tag, e.g.
-   `git remote add upstream https://github.com/alphaofficial/express-inertia.git`.
-2. **Diff against the recorded version.** A `hatch upgrade` CLI could fetch
-   the new tag and compute a diff between `pkg.hatch.version` and the latest
-   release, restricted to the "framework" subset of files
-   (`src/middleware/`, `src/database/orm.config.ts`, `public/template.html`,
-   build configs, dependency ranges in `package.json`).
-3. **Apply via three-way merge.** Use `git apply --3way` (or `git merge-file`)
-   so the developer resolves conflicts in their own editor, exactly like a
-   normal merge — only on framework files, never on user code under
-   `src/controllers/`, `src/views/pages/`, `src/models/`, or `src/routes/`.
-4. **Bump the recorded version.** On success, write the new tag back to
-   `pkg.hatch.version`.
-
-The key insight is that the starter must distinguish *framework files*
-(safe to upgrade) from *user files* (never touched). Keeping that boundary
-crisp — e.g. by never asking developers to edit `src/middleware/inertia.ts` —
-is what makes a future upgrade flow viable.
