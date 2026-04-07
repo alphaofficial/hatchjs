@@ -1,7 +1,7 @@
 {
-  "name": "inertia",
-  "version": "1.0.0",
-  "description": "",
+  "name": "hatch",
+  "version": "0.1.0",
+  "description": "Hatch — a fullstack starter for Express, Inertia, and React.",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",

@@ -2,362 +2,408 @@ import { Head, Link } from '@inertiajs/react';
 
 interface Props {
 	applicationName: string;
-	message?: string;
-	timestamp?: string;
 	auth?: any;
 	isAuthenticated?: boolean;
 }
 
+const INSTALL_CMD =
+	'curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash';
+
 export default function Home(pageProps: Props) {
 	const { applicationName, isAuthenticated } = pageProps;
+
 	return (
 		<>
 			<Head>
-				<title>Express Inertia — Fullstack starter for Express, Inertia & React</title>
+				<title>Hatch — A fullstack starter for Express, Inertia &amp; React</title>
 				<meta
 					name="description"
-					content="A batteries-included fullstack starter: Express 5, Inertia.js, React 19, MikroORM, sessions, and Tailwind. Type-safe, production-ready, and one command to install."
+					content="Hatch compresses the complexity of modern web apps. Server-rendered React on top of Express — no API layer, no glue code, no overthinking."
 				/>
-				<meta property="og:title" content="Express Inertia — Fullstack starter" />
+				<meta property="og:title" content="Hatch — A fullstack starter for Express, Inertia & React" />
 				<meta
 					property="og:description"
-					content="Express + Inertia + React + MikroORM. Auth, sessions, SSR, and tests out of the box."
+					content="Server-rendered React on top of Express. Auth, sessions, ORM, migrations and SSR included."
 				/>
 				<meta property="og:type" content="website" />
 			</Head>
-			<div className="min-h-screen bg-white">
-				<header className="absolute inset-x-0 top-0 z-50">
-					<div className="mx-auto max-w-2xl lg:max-w-4xl">
-						<nav className="flex items-center justify-between py-6" aria-label="Global">
-							<div>
-								<Link href="/">
-									<span className="text-xl font-bold text-gray-900">{applicationName}</span>
+
+			<div className="min-h-screen bg-white text-gray-900 antialiased">
+				{/* Top nav */}
+				<header className="border-b border-gray-200">
+					<div className="mx-auto max-w-6xl px-6 py-5 flex items-center justify-between">
+						<Link href="/" className="flex items-center gap-x-2">
+							<span className="inline-flex h-7 w-7 items-center justify-center rounded-sm bg-gray-900 text-white text-xs font-bold">
+								H
+							</span>
+							<span className="text-lg font-bold tracking-tight">{applicationName}</span>
+						</Link>
+						<nav className="flex items-center gap-x-8 text-sm font-semibold text-gray-700">
+							<a href="#features" className="hover:text-gray-900">Features</a>
+							<a href="#how" className="hover:text-gray-900">How it works</a>
+							<a href="#faq" className="hover:text-gray-900">FAQ</a>
+							<a
+								href="https://github.com/alphaofficial/express-inertia"
+								className="hover:text-gray-900"
+							>
+								GitHub
+							</a>
+							{!isAuthenticated && (
+								<Link href="/login" className="hover:text-gray-900">
+									Log in
 								</Link>
-							</div>
-							{!isAuthenticated ? (
-								<div>
-									<Link href="/login" className="text-sm font-semibold leading-6 text-gray-900">
-										Log in <span aria-hidden="true">&rarr;</span>
-									</Link>
-								</div>
-							) : null}
+							)}
 						</nav>
 					</div>
 				</header>
-				<div className="relative isolate px-6 pt-14 lg:px-8">
-					<div className="mx-auto max-w-2xl py-20">
-						<div className="text-center">
-							<span className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600">
-								v0.1 · early preview
-							</span>
-							<h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-								The fullstack starter for Express &amp; React
-							</h1>
-							<p className="mt-6 text-lg leading-8 text-gray-600">
-								Server-rendered React without an API layer. Type-safe routes, sessions,
-								auth, and MikroORM — wired together so you can ship features on day one.
-							</p>
 
-							<div className="mt-8 mx-auto max-w-xl rounded-md border border-gray-200 bg-gray-50 p-4 text-left">
-								<p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Install</p>
-								<pre className="mt-2 overflow-x-auto text-sm text-gray-900">
-									<code>{`curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash -s my-app`}</code>
-								</pre>
-							</div>
+				{/* Hero */}
+				<section className="border-b border-gray-200">
+					<div className="mx-auto max-w-6xl px-6 py-24 lg:py-32">
+						<span className="inline-flex items-center gap-x-2 rounded-sm border border-gray-300 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-gray-600">
+							<span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-900" />
+							v0.1 · early preview
+						</span>
+						<h1 className="mt-8 text-5xl font-extrabold tracking-tight text-gray-900 sm:text-6xl lg:text-7xl">
+							Compress the complexity
+							<br />
+							of modern web apps.
+						</h1>
+						<p className="mt-8 max-w-2xl text-xl leading-8 text-gray-600">
+							Hatch is a server-rendered React stack on top of Express. No API layer.
+							No fetch glue. No meta-framework. Write controllers, render pages, ship.
+						</p>
+
+						<div className="mt-10 flex flex-col sm:flex-row sm:items-center gap-4">
 							{!isAuthenticated ? (
-								<div className="mt-10 flex items-center justify-center gap-x-6">
-									<Link
-										href="/register"
-										className="rounded-md bg-black px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-									>
-										Get started
-									</Link>
-									<Link href="/login" className="text-sm font-semibold leading-6 text-gray-900">
-										Sign in <span aria-hidden="true">→</span>
-									</Link>
-								</div>
+								<Link
+									href="/register"
+									className="inline-flex items-center justify-center rounded-sm bg-gray-900 px-5 py-3 text-sm font-bold uppercase tracking-wider text-white hover:bg-black"
+								>
+									Get started →
+								</Link>
 							) : (
-							<div className="mt-10 flex items-center justify-center">
-								<Link href="/login" className="text-sm font-semibold leading-6 text-gray-900">
-										 Go to app <span aria-hidden="true">→</span>
-									</Link>
-							</div>)}
-						</div>
-					</div>
-
-					<div className="mx-auto max-w-2xl lg:max-w-4xl">
-						<div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:grid-cols-2">
-							<div>
-								<h2 className="text-base font-semibold leading-7 text-gray-900">Everything you need</h2>
-								<p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-									Batteries included
-								</p>
-								<p className="mt-6 text-lg leading-8 text-gray-600">
-									Skip the boilerplate. Auth, sessions, ORM, migrations, and SSR are
-									already wired up — write controllers, render React.
-								</p>
-								<dl className="mt-10 max-w-xl space-y-8 text-base leading-7 text-gray-600">
-									<div className="relative pl-9">
-										<dt className="inline font-semibold text-gray-900">
-											<svg className="absolute left-1 top-1 h-5 w-5 text-gray-900" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-												<path fillRule="evenodd" d="M5.5 17a4.5 4.5 0 01-1.44-8.765 4.5 4.5 0 018.302-3.046 3.5 3.5 0 014.504 4.272A4 4 0 0115 17H5.5zm3.75-2.75a.75.75 0 001.5 0V9.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0l-3.25 3.5a.75.75 0 101.1 1.02l1.95-2.1v4.59z" clipRule="evenodd" />
-											</svg>
-											Inertia SSR, no API layer.
-										</dt>
-										<dd className="inline"> Pass props from Express straight into React components — no fetch, no JSON glue.</dd>
-									</div>
-									<div className="relative pl-9">
-										<dt className="inline font-semibold text-gray-900">
-											<svg className="absolute left-1 top-1 h-5 w-5 text-gray-900" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-												<path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-											</svg>
-											Auth &amp; sessions built in.
-										</dt>
-										<dd className="inline"> bcrypt password hashing, DB-backed sessions, guest/auth route guards, helpers on <code className="text-xs">req</code>.</dd>
-									</div>
-									<div className="relative pl-9">
-										<dt className="inline font-semibold text-gray-900">
-											<svg className="absolute left-1 top-1 h-5 w-5 text-gray-900" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-												<path d="M4.632 3.533A2 2 0 016.577 2h6.846a2 2 0 011.945 1.533l1.976 8.234A9.966 9.966 0 0010 12c-2.51 0-4.8.9-6.344 2.767L4.632 3.533z" />
-												<path fillRule="evenodd" d="M2 13a8 8 0 1116 0 8 8 0 01-16 0zm8-3a3 3 0 100 6 3 3 0 000-6z" clipRule="evenodd" />
-											</svg>
-											MikroORM &amp; migrations.
-										</dt>
-										<dd className="inline"> SQLite by default, Postgres-ready. EntitySchema mappings, no decorators.</dd>
-									</div>
-									<div className="relative pl-9">
-										<dt className="inline font-semibold text-gray-900">
-											<svg className="absolute left-1 top-1 h-5 w-5 text-gray-900" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-												<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-											</svg>
-											Production hardened.
-										</dt>
-										<dd className="inline"> Helmet, compression, health checks, graceful shutdown, structured logs, integration tests.</dd>
-									</div>
-								</dl>
-							</div>
-							<div className="flex items-center justify-center">
-								<div className="rounded-xl bg-gray-50 p-2 ring-1 ring-inset ring-gray-200 lg:rounded-2xl lg:p-4">
-									<div className="rounded-md bg-white p-6 shadow-md ring-1 ring-gray-200">
-										<h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Controller → React</h3>
-										<pre className="mt-3 overflow-x-auto text-xs leading-5 text-gray-900">
-											<code>{`// src/controllers/HomeController.ts
-res.inertia('Home', {
-  message: 'Hello from Express',
-  user: await req.user(),
-})
-
-// src/views/pages/Home.tsx
-export default function Home({ message, user }) {
-  return <h1>{message}, {user?.name}</h1>
-}`}</code>
-										</pre>
-										<p className="mt-4 text-xs text-gray-500">
-											No REST endpoint. No fetch. Props flow straight from Express to React.
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* Tech stack row */}
-				<section className="mx-auto max-w-2xl lg:max-w-4xl px-6 mt-24 lg:px-8">
-					<p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-						Built on the boring stack that scales
-					</p>
-					<ul className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-medium text-gray-600">
-						<li>Express 5</li>
-						<li aria-hidden="true" className="text-gray-300">·</li>
-						<li>Inertia.js 2</li>
-						<li aria-hidden="true" className="text-gray-300">·</li>
-						<li>React 19</li>
-						<li aria-hidden="true" className="text-gray-300">·</li>
-						<li>MikroORM 6</li>
-						<li aria-hidden="true" className="text-gray-300">·</li>
-						<li>Vite 6</li>
-						<li aria-hidden="true" className="text-gray-300">·</li>
-						<li>Tailwind 3</li>
-						<li aria-hidden="true" className="text-gray-300">·</li>
-						<li>TypeScript 5</li>
-					</ul>
-				</section>
-
-				{/* How it works */}
-				<section className="mx-auto max-w-2xl lg:max-w-4xl px-6 mt-24 lg:px-8">
-					<div className="text-center">
-						<h2 className="text-base font-semibold leading-7 text-gray-900">How it works</h2>
-						<p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-							From zero to running app in three steps
-						</p>
-					</div>
-					<ol className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
-						<li className="rounded-lg border border-gray-200 p-6">
-							<div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold text-gray-900">1</div>
-							<h3 className="mt-4 text-base font-semibold text-gray-900">Install</h3>
-							<p className="mt-2 text-sm leading-6 text-gray-600">
-								One curl command scaffolds the project, generates a session secret,
-								and runs migrations.
-							</p>
-						</li>
-						<li className="rounded-lg border border-gray-200 p-6">
-							<div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold text-gray-900">2</div>
-							<h3 className="mt-4 text-base font-semibold text-gray-900">Define a route</h3>
-							<p className="mt-2 text-sm leading-6 text-gray-600">
-								Add an Express controller and call <code className="text-xs">res.inertia(&apos;Page&apos;, props)</code>.
-								No API endpoints, no client-side data fetching.
-							</p>
-						</li>
-						<li className="rounded-lg border border-gray-200 p-6">
-							<div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold text-gray-900">3</div>
-							<h3 className="mt-4 text-base font-semibold text-gray-900">Render React</h3>
-							<p className="mt-2 text-sm leading-6 text-gray-600">
-								Drop a TSX file in <code className="text-xs">src/views/pages</code>.
-								Props arrive type-safe, the page is server-rendered, and Inertia handles
-								client-side navigation.
-							</p>
-						</li>
-					</ol>
-				</section>
-
-				{/* What's included */}
-				<section className="mx-auto max-w-2xl lg:max-w-4xl px-6 mt-24 lg:px-8">
-					<div className="text-center">
-						<h2 className="text-base font-semibold leading-7 text-gray-900">What&apos;s in the box</h2>
-						<p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-							No glue code required
-						</p>
-						<p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-gray-600">
-							Every line below is wired up and tested. Delete what you don&apos;t need.
-						</p>
-					</div>
-					<ul className="mt-12 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 text-sm leading-6 text-gray-700">
-						{[
-							'Email + password auth',
-							'DB-backed sessions',
-							'Route guards (auth / guest)',
-							'MikroORM with migrations',
-							'SQLite by default, Postgres ready',
-							'Type-safe page registry',
-							'Helmet security headers',
-							'gzip compression',
-							'Body size limits',
-							'Health & readiness probes',
-							'Graceful shutdown',
-							'Structured Pino logs',
-							'Configurable rate limiting',
-							'XSS-safe page props',
-							'Global Inertia error page',
-							'Vite + Tailwind build pipeline',
-							'Integration test suite',
-							'Zod env validation',
-						].map((item) => (
-							<li key={item} className="flex items-start gap-x-2">
-								<svg className="mt-0.5 h-5 w-5 flex-none text-gray-900" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-									<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-								</svg>
-								<span>{item}</span>
-							</li>
-						))}
-					</ul>
-				</section>
-
-				{/* FAQ */}
-				<section className="mx-auto max-w-2xl lg:max-w-4xl px-6 mt-24 lg:px-8">
-					<div className="text-center">
-						<h2 className="text-base font-semibold leading-7 text-gray-900">FAQ</h2>
-						<p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-							Questions you might be asking
-						</p>
-					</div>
-					<dl className="mt-12 space-y-8">
-						<div className="border-t border-gray-200 pt-6">
-							<dt className="text-base font-semibold text-gray-900">Why not Next.js?</dt>
-							<dd className="mt-2 text-sm leading-6 text-gray-600">
-								Next.js is great when you want a meta-framework. Express Inertia is for
-								teams who already know Express, want full control of the request lifecycle,
-								and would rather render React from a controller than learn another router.
-							</dd>
-						</div>
-						<div className="border-t border-gray-200 pt-6">
-							<dt className="text-base font-semibold text-gray-900">Can I use Postgres instead of SQLite?</dt>
-							<dd className="mt-2 text-sm leading-6 text-gray-600">
-								Yes. The Postgres MikroORM driver is already installed — switch it on in
-								<code className="text-xs"> src/database/orm.config.ts</code> and set your
-								connection string.
-							</dd>
-						</div>
-						<div className="border-t border-gray-200 pt-6">
-							<dt className="text-base font-semibold text-gray-900">Is this production-ready?</dt>
-							<dd className="mt-2 text-sm leading-6 text-gray-600">
-								The starter ships with helmet, compression, health checks, graceful shutdown,
-								structured logs, and an integration test suite. Add your features and deploy.
-							</dd>
-						</div>
-						<div className="border-t border-gray-200 pt-6">
-							<dt className="text-base font-semibold text-gray-900">Where do I deploy it?</dt>
-							<dd className="mt-2 text-sm leading-6 text-gray-600">
-								Anywhere that runs Node 20+. Fly.io, Railway, Render, a plain VPS, Docker —
-								your choice. Point the liveness probe at <code className="text-xs">/healthz</code> and
-								readiness at <code className="text-xs">/readyz</code>.
-							</dd>
-						</div>
-					</dl>
-				</section>
-
-				{/* Bottom CTA */}
-				<section className="mx-auto max-w-2xl lg:max-w-4xl px-6 mt-24 lg:px-8">
-					<div className="rounded-2xl border border-gray-200 bg-gray-50 px-6 py-12 text-center sm:px-12">
-						<h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-							Ready to ship?
-						</h2>
-						<p className="mx-auto mt-3 max-w-xl text-base leading-7 text-gray-600">
-							Scaffold a fresh app in under a minute. No accounts, no signup, no telemetry.
-						</p>
-						<div className="mt-6 mx-auto max-w-xl rounded-md border border-gray-200 bg-white p-4 text-left">
-							<pre className="overflow-x-auto text-sm text-gray-900">
-								<code>{`curl -fsSL https://raw.githubusercontent.com/alphaofficial/express-inertia/main/install.sh | bash -s my-app`}</code>
-							</pre>
-						</div>
-						<div className="mt-6 flex items-center justify-center gap-x-6">
+								<Link
+									href="/home"
+									className="inline-flex items-center justify-center rounded-sm bg-gray-900 px-5 py-3 text-sm font-bold uppercase tracking-wider text-white hover:bg-black"
+								>
+									Open the app →
+								</Link>
+							)}
 							<a
 								href="https://github.com/alphaofficial/express-inertia"
-								className="rounded-md bg-black px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-800"
+								className="inline-flex items-center justify-center rounded-sm border border-gray-900 px-5 py-3 text-sm font-bold uppercase tracking-wider text-gray-900 hover:bg-gray-900 hover:text-white"
 							>
 								View on GitHub
 							</a>
+						</div>
+
+						<div className="mt-12 max-w-3xl">
+							<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+								Install
+							</p>
+							<div className="mt-2 rounded-sm border border-gray-900 bg-gray-900 p-4 font-mono text-sm text-gray-100">
+								<span className="select-none text-gray-500">$ </span>
+								<span>{INSTALL_CMD}</span>
+							</div>
+							<p className="mt-2 text-xs text-gray-500">
+								Interactive setup. Add <code>--quick my-app</code> for a one-shot scaffold with defaults.
+							</p>
+						</div>
+					</div>
+				</section>
+
+				{/* Big tagline / Optimized for X */}
+				<section className="border-b border-gray-200 bg-gray-50">
+					<div className="mx-auto max-w-6xl px-6 py-24">
+						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+							Optimized for shipping
+						</p>
+						<h2 className="mt-4 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl max-w-4xl">
+							The boring stack you already know,
+							<br />
+							wired for the way you actually build.
+						</h2>
+						<p className="mt-6 max-w-2xl text-lg text-gray-600">
+							Express handles the request. Your controller queries the database and calls
+							<code className="mx-1 rounded-sm bg-gray-200 px-1.5 py-0.5 text-sm font-mono text-gray-900">res.inertia(...)</code>.
+							React renders the page on the server, hydrates on the client, and Inertia takes
+							over navigation. That&apos;s the whole loop.
+						</p>
+					</div>
+				</section>
+
+				{/* Code sample */}
+				<section className="border-b border-gray-200">
+					<div className="mx-auto max-w-6xl px-6 py-24">
+						<div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+							<div>
+								<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+									Controller → Component
+								</p>
+								<h2 className="mt-4 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+									Props flow straight from Express to React.
+								</h2>
+								<p className="mt-6 text-lg text-gray-600">
+									No REST layer. No data-fetching hook. The same object you return from your
+									controller arrives as typed props in your page component.
+								</p>
+								<ul className="mt-8 space-y-3 text-base text-gray-700">
+									<li className="flex gap-x-3">
+										<span className="font-bold text-gray-900">→</span>
+										Server-side rendered on first load
+									</li>
+									<li className="flex gap-x-3">
+										<span className="font-bold text-gray-900">→</span>
+										Type-safe page registry in <code className="text-sm">src/config/pages.ts</code>
+									</li>
+									<li className="flex gap-x-3">
+										<span className="font-bold text-gray-900">→</span>
+										Client-side navigation via Inertia, no router setup
+									</li>
+								</ul>
+							</div>
+							<div className="rounded-sm border border-gray-900 bg-gray-900 p-6 font-mono text-sm leading-6 text-gray-100 overflow-x-auto">
+								<div className="text-gray-500">// src/controllers/PostController.ts</div>
+								<div>
+									<span className="text-gray-400">export class</span>{' '}
+									<span className="text-white">PostController</span>{' '}
+									<span className="text-gray-400">extends</span>{' '}
+									<span className="text-white">BaseController</span> {'{'}
+								</div>
+								<div className="pl-4">
+									<span className="text-gray-400">static async</span>{' '}
+									<span className="text-white">show</span>(req, res) {'{'}
+								</div>
+								<div className="pl-8">
+									<span className="text-gray-400">const</span> post ={' '}
+									<span className="text-gray-400">await</span> req.entityManager
+								</div>
+								<div className="pl-12">
+									.findOne(<span className="text-white">Post</span>, {'{'} id: req.params.id {'}'})
+								</div>
+								<div className="pl-8">
+									<span className="text-gray-400">return</span> res.inertia(
+									<span className="text-yellow-300">'Post'</span>, {'{'} post {'}'})
+								</div>
+								<div className="pl-4">{'}'}</div>
+								<div>{'}'}</div>
+								<div className="mt-4 text-gray-500">// src/views/pages/Post.tsx</div>
+								<div>
+									<span className="text-gray-400">export default function</span>{' '}
+									<span className="text-white">Post</span>({'{ post }'}: Props) {'{'}
+								</div>
+								<div className="pl-4">
+									<span className="text-gray-400">return</span> &lt;article&gt;{'{'}post.title{'}'}&lt;/article&gt;
+								</div>
+								<div>{'}'}</div>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				{/* Features */}
+				<section id="features" className="border-b border-gray-200 bg-gray-50">
+					<div className="mx-auto max-w-6xl px-6 py-24">
+						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+							Batteries included
+						</p>
+						<h2 className="mt-4 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+							Everything wired,
+							<br />
+							nothing assumed.
+						</h2>
+						<div className="mt-16 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+							{FEATURES.map((f) => (
+								<div key={f.title}>
+									<h3 className="text-base font-bold text-gray-900">{f.title}</h3>
+									<p className="mt-2 text-sm leading-6 text-gray-600">{f.description}</p>
+								</div>
+							))}
+						</div>
+					</div>
+				</section>
+
+				{/* How it works */}
+				<section id="how" className="border-b border-gray-200">
+					<div className="mx-auto max-w-6xl px-6 py-24">
+						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+							How it works
+						</p>
+						<h2 className="mt-4 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+							From zero to shipping in three steps.
+						</h2>
+						<ol className="mt-16 grid grid-cols-1 gap-12 md:grid-cols-3">
+							{STEPS.map((step, i) => (
+								<li key={step.title} className="border-t-2 border-gray-900 pt-6">
+									<div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+										Step {i + 1}
+									</div>
+									<h3 className="mt-2 text-xl font-bold text-gray-900">{step.title}</h3>
+									<p className="mt-3 text-sm leading-6 text-gray-600">{step.description}</p>
+								</li>
+							))}
+						</ol>
+					</div>
+				</section>
+
+				{/* FAQ */}
+				<section id="faq" className="border-b border-gray-200 bg-gray-50">
+					<div className="mx-auto max-w-6xl px-6 py-24">
+						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+							FAQ
+						</p>
+						<h2 className="mt-4 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+							Questions you might be asking.
+						</h2>
+						<dl className="mt-16 divide-y divide-gray-300">
+							{FAQS.map((qa) => (
+								<div key={qa.q} className="py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+									<dt className="text-lg font-bold text-gray-900 lg:col-span-1">{qa.q}</dt>
+									<dd className="text-base text-gray-600 lg:col-span-2">{qa.a}</dd>
+								</div>
+							))}
+						</dl>
+					</div>
+				</section>
+
+				{/* Bottom CTA */}
+				<section className="border-b border-gray-200 bg-gray-900 text-white">
+					<div className="mx-auto max-w-6xl px-6 py-24 text-center">
+						<h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+							Ship something this weekend.
+						</h2>
+						<p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
+							No accounts. No telemetry. No signup.
+							Just clone, type-check, deploy.
+						</p>
+						<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+							<a
+								href="https://github.com/alphaofficial/express-inertia"
+								className="inline-flex items-center justify-center rounded-sm bg-white px-5 py-3 text-sm font-bold uppercase tracking-wider text-gray-900 hover:bg-gray-100"
+							>
+								Star on GitHub
+							</a>
 							<a
 								href="https://github.com/alphaofficial/express-inertia#readme"
-								className="text-sm font-semibold leading-6 text-gray-900"
+								className="inline-flex items-center justify-center rounded-sm border border-white px-5 py-3 text-sm font-bold uppercase tracking-wider text-white hover:bg-white hover:text-gray-900"
 							>
-								Read the docs <span aria-hidden="true">→</span>
+								Read the docs →
 							</a>
 						</div>
 					</div>
 				</section>
 
 				<footer className="bg-white">
-					<div className="mx-auto max-w-2xl lg:max-w-4xl mt-24 mb-8 px-6 lg:px-8">
-						<div className="border-t border-gray-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-y-4">
-							<p className="text-xs leading-5 text-gray-500">
-								&copy; 2025 {applicationName}. Released under the MIT license.
-							</p>
-							<ul className="flex items-center gap-x-6 text-xs leading-5 text-gray-500">
-								<li>
-									<a href="https://github.com/alphaofficial/express-inertia" className="hover:text-gray-900">GitHub</a>
-								</li>
-								<li>
-									<a href="https://github.com/alphaofficial/express-inertia#readme" className="hover:text-gray-900">Docs</a>
-								</li>
-								<li>
-									<a href="https://github.com/alphaofficial/express-inertia/issues" className="hover:text-gray-900">Issues</a>
-								</li>
-							</ul>
-						</div>
+					<div className="mx-auto max-w-6xl px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+						<p className="text-xs text-gray-500">
+							&copy; 2025 {applicationName}. Released under the MIT license.
+						</p>
+						<ul className="flex items-center gap-x-6 text-xs text-gray-500">
+							<li>
+								<a href="https://github.com/alphaofficial/express-inertia" className="hover:text-gray-900">
+									GitHub
+								</a>
+							</li>
+							<li>
+								<a href="https://github.com/alphaofficial/express-inertia#readme" className="hover:text-gray-900">
+									Docs
+								</a>
+							</li>
+							<li>
+								<a href="https://github.com/alphaofficial/express-inertia/issues" className="hover:text-gray-900">
+									Issues
+								</a>
+							</li>
+						</ul>
 					</div>
 				</footer>
 			</div>
 		</>
 	);
 }
+
+const FEATURES = [
+	{
+		title: 'Server-rendered React',
+		description:
+			'Inertia.js bridges Express controllers and React components. SSR on first load, SPA after.',
+	},
+	{
+		title: 'Auth & sessions',
+		description:
+			'bcrypt password hashing, DB-backed sessions, guest/auth route guards, helpers on req.',
+	},
+	{
+		title: 'MikroORM with migrations',
+		description:
+			'EntitySchema mappings (no decorators). SQLite by default, Postgres-ready.',
+	},
+	{
+		title: 'Production hardened',
+		description:
+			'Helmet, compression, body limits, health probes, graceful shutdown, structured logs.',
+	},
+	{
+		title: 'Type-safe pages',
+		description:
+			'Page names live in src/config/pages.ts. The compiler catches every typo before deploy.',
+	},
+	{
+		title: 'Vite + Tailwind',
+		description:
+			'Fast HMR in dev, optimized client bundle in prod. Tailwind 3 utility-first styling.',
+	},
+	{
+		title: 'Configurable rate limiting',
+		description:
+			'Opt-in per-IP limiter on auth routes. Off by default, env-driven, edge-friendly.',
+	},
+	{
+		title: 'XSS-safe page props',
+		description:
+			'Inertia props are HTML-attribute escaped end-to-end. Untrusted data is safe by default.',
+	},
+	{
+		title: 'Zod env validation',
+		description:
+			'Boot fails fast on missing or malformed env vars. No silent production drift.',
+	},
+];
+
+const STEPS = [
+	{
+		title: 'Install',
+		description:
+			'One curl command. The installer prompts for a name and database, generates a session secret, and runs migrations.',
+	},
+	{
+		title: 'Define a route',
+		description:
+			'Add a controller and call res.inertia(\u2018Page\u2019, props). No JSON endpoints, no client-side data fetching.',
+	},
+	{
+		title: 'Render React',
+		description:
+			'Drop a TSX file in src/views/pages. Props arrive type-safe, the page is server-rendered, Inertia handles the rest.',
+	},
+];
+
+const FAQS = [
+	{
+		q: 'Why not Next.js?',
+		a: 'Next is great when you want a meta-framework. Hatch is for teams who already know Express, want full control of the request lifecycle, and would rather render React from a controller than learn another router.',
+	},
+	{
+		q: 'Can I use Postgres?',
+		a: 'Yes. The Postgres MikroORM driver ships with the starter — switch the driver in src/database/orm.config.ts and set DATABASE_URL. The installer also asks during scaffold.',
+	},
+	{
+		q: 'Is this production-ready?',
+		a: 'It ships with helmet, compression, health probes, graceful shutdown, structured logging, body-size limits, and an opt-in rate limiter. Add your features and deploy.',
+	},
+	{
+		q: 'Where do I deploy?',
+		a: 'Anywhere that runs Node 20+. Fly.io, Railway, Render, a plain VPS, Docker — your call. Point liveness at /healthz and readiness at /readyz.',
+	},
+];

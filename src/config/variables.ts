@@ -5,6 +5,7 @@ const DEV_SESSION_SECRET = '0cfca1d1875a2b4d9742be6ae4603fd7bfac19012b03072649c3
 const baseSchema = z.object({
 	NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
 	PORT: z.coerce.number().optional().default(3000),
+	APP_NAME: z.string().optional().default('Hatch'),
 	APP_URL: z.string().optional().default('http://localhost:3000'),
 	TRUST_PROXY: z.string().optional().default('loopback'),
 	SESSION_SECRET: z.string().optional(),

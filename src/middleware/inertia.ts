@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { InertiaExpressAdapter } from '../adapters/InertiaExpressAdapter';
+import variables from '../config/variables';
 
 // Extend Express Request to include inertia
 declare module 'express-serve-static-core' {
@@ -22,7 +23,7 @@ export class InertiaExpressMiddleware {
 		const isAuthenticated = req.is_authenticated();
 
 		inertia.share({
-			applicationName: 'Express Inertia App',
+			applicationName: variables.APP_NAME,
 			isAuthenticated,
 			user: user ? {
 				id: user.id,

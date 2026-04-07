@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PageName } from '../config/pages';
 import * as fs from 'fs';
 import * as path from 'path';
+import variables from '../config/variables';
 
 const HTML_ESCAPES: Record<string, string> = {
 	'&': '&amp;',
@@ -38,7 +39,7 @@ export class BaseController {
 			const template = fs.readFileSync(templatePath, 'utf-8');
 
 			const html = template
-				.replace('{{TITLE}}', escapeHtml(documentMetadata.title || 'Express Inertia App'))
+				.replace('{{TITLE}}', escapeHtml(documentMetadata.title || variables.APP_NAME))
 				.replace('{{HEAD}}', documentMetadata.head || '')
 				.replace('{{PAGE_DATA}}', escapeHtmlAttribute(JSON.stringify(result)))
 				.replace('{{CLIENT_ENTRY}}', '/app.js');
