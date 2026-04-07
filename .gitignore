@@ -4,12 +4,14 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+.claude/
 
 
 
 # Ignore build output in public but keep template
 public/*
 !public/template.html
+!public/favicon.svg
 
 test-results/
 playwright-report/

@@ -6,9 +6,12 @@ import { MikroORM, RequestContext } from "@mikro-orm/core";
 import ormConfig from "../../src/database/orm.config";
 import { SessionStore } from "../../src/middleware/sessionStore";
 import express from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
 import routes from "../../src/routes/route";
 import path from "node:path";
 import { injectAuthHelpers } from "../../src/middleware/authUtils";
+import { notFoundHandler, globalErrorHandler } from "../../src/middleware/errorHandler";
 
 declare module "express-serve-static-core" {
 	interface Request {
@@ -30,8 +33,25 @@ export const bootstrapTestApp = async () => {
 	const orm = await MikroORM.init({ ...ormConfig, dbName: "express_inertia_test.db" });
 	const sessionStore = new SessionStore(orm);
 
+	app.use(helmet({ contentSecurityPolicy: false }));
+	app.use(compression());
+
+	app.get('/healthz', (_req, res) => {
+		res.status(200).json({ status: 'ok' });
+	});
+
+	app.get('/readyz', async (_req, res) => {
+		try {
+			await orm.em.getConnection().execute('select 1');
+			res.status(200).json({ status: 'ready' });
+		} catch {
+			res.status(503).json({ status: 'not_ready' });
+		}
+	});
+
 	app.use((req, _, next) => {
 		req.orm = orm;
+		(req as any).entityManager = orm.em.fork();
 		req.logger = log;
 		next();
 	});
@@ -72,6 +92,10 @@ export const bootstrapTestApp = async () => {
 
 	// Routes
 	app.use('/', routes);
+
+	// 404 + error handlers
+	app.use(notFoundHandler);
+	app.use(globalErrorHandler);
 
 	return { app, orm, mockLogger: log, sessionStore };
 };

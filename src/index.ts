@@ -2,6 +2,8 @@ import 'dotenv-defaults/config';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
+import helmet from 'helmet';
+import compression from 'compression';
 import routes from './routes/route';
 import ormConfig from './database/orm.config';
 import { MikroORM, RequestContext } from '@mikro-orm/core';
@@ -9,6 +11,7 @@ import { PinoLogger } from './logger/pinoLogger';
 import variables from './config/variables';
 import { User } from './models/User';
 import { SessionStore } from './middleware/sessionStore';
+import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
 
 declare module "express-serve-static-core" {
 	interface Request {
@@ -25,11 +28,39 @@ declare module "express-serve-static-core" {
 }
 
 const app = express();
-const port = variables.PORT
+const port = variables.PORT;
+
+// Trust proxy headers (X-Forwarded-*) when running behind a load balancer.
+app.set('trust proxy', variables.TRUST_PROXY);
 
 async function bootstrap() {
   const orm = await MikroORM.init(ormConfig);
   const sessionStore = new SessionStore(orm);
+
+  // Security headers. contentSecurityPolicy is left default; tweak per-app as needed.
+  app.use(
+    helmet({
+      contentSecurityPolicy: variables.NODE_ENV === 'production' ? undefined : false,
+    })
+  );
+
+  // Gzip responses.
+  app.use(compression());
+
+  // Health endpoints — registered before session/db middleware so liveness
+  // probes don't allocate resources.
+  app.get('/healthz', (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
+  app.get('/readyz', async (_req, res) => {
+    try {
+      await orm.em.getConnection().execute('select 1');
+      res.status(200).json({ status: 'ready' });
+    } catch (err) {
+      res.status(503).json({ status: 'not_ready' });
+    }
+  });
 
   app.use((req, _, next) => {
 		req.orm = orm;
@@ -59,6 +90,7 @@ async function bootstrap() {
     cookie: {
       secure: variables.NODE_ENV === 'production',
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: variables.SESSION_MAX_AGE,
     }
   }));
@@ -69,9 +101,9 @@ async function bootstrap() {
     injectAuthHelpers(req, _, next);
   });
 
-  // Middleware
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // Body parsers — bound to a sane size to mitigate trivial DoS.
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '100kb' }));
   app.use(PinoLogger.instance);
 
   // Serve static files from public directory (template.html)
@@ -80,13 +112,36 @@ async function bootstrap() {
   // Routes
   app.use('/', routes);
 
-  app.listen(port, () => {
+  // 404 + global error handlers must be registered last.
+  app.use(notFoundHandler);
+  app.use(globalErrorHandler);
+
+  const server = app.listen(port, () => {
     PinoLogger.info('App', `Server running at http://localhost:${port}`);
   });
+
+  // Graceful shutdown
+  const shutdown = async (signal: string) => {
+    PinoLogger.info('App', `Received ${signal}, shutting down...`);
+    server.close(async () => {
+      try {
+        await orm.close(true);
+      } catch (err: any) {
+        PinoLogger.error('App', 'Error closing ORM', { message: err?.message });
+      }
+      process.exit(0);
+    });
+    // Force-exit after 10s if close hangs.
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 bootstrap().catch(err => {
   PinoLogger.error('App', "Failed to start server", err);
+  process.exit(1);
 });
 
 export default app;
