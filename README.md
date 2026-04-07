@@ -1,4 +1,4 @@
-# Hatch
+# Hatch JS
 
 A batteries-included fullstack starter built on **Express 5**, **Inertia.js**, **React 19**, **MikroORM**, and **Tailwind CSS**. Server-rendered React without an API layer — pass props from Express controllers straight into React pages.
 
@@ -62,7 +62,7 @@ Flags: `--quick`, `--branch <name>`, `--no-install`, `--no-git`.
 | `TRUST_PROXY`               | `loopback`              | Set to your LB CIDR (or `true`) when behind a reverse proxy      |
 | `SESSION_SECRET`            | _(dev only default)_    | **Required in production.** Generate with `openssl rand -hex 32` |
 | `SESSION_MAX_AGE`           | `86400000`              | Session lifetime in ms (24h default)                             |
-| `APP_NAME`                  | `Hatch`                 | Display name shown in the UI and `<title>`                       |
+| `APP_NAME`                  | `Hatch JS`              | Display name shown in the UI and `<title>`                       |
 | `DB_PATH`                   | `hatch.db`              | SQLite file path                                                 |
 | `RATE_LIMIT_ENABLED`        | `false`                 | Enable per-IP limiter on `/login` and `/register`                |
 | `RATE_LIMIT_AUTH_MAX`       | `5`                     | Max requests per window                                          |

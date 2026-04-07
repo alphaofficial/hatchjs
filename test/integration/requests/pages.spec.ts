@@ -32,7 +32,7 @@ describe("Pages Integration Tests", () => {
 				
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Home");
-				expect(pageData.props.applicationName).toBe("Hatch");
+				expect(pageData.props.applicationName).toBe("Hatch JS");
 			});
 
 			it("should render landing page for authenticated users", async () => {
@@ -49,7 +49,7 @@ describe("Pages Integration Tests", () => {
 				
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Home");
-				expect(pageData.props.applicationName).toBe("Hatch");
+				expect(pageData.props.applicationName).toBe("Hatch JS");
 			});
 		});
 

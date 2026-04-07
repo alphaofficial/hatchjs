@@ -147,7 +147,7 @@ export default function Register({ errors }: RegisterProps) {
                 <div className="absolute inset-0 bg-black">
                     <div className="flex h-full items-center justify-center">
                         <div className="text-center">
-                            <h1 className="text-4xl font-bold text-white mb-4">Hatch</h1>
+                            <h1 className="text-4xl font-bold text-white mb-4">Hatch JS</h1>
                             <p className="text-xl text-black">A fullstack starter for Express &amp; React</p>
                         </div>
                     </div>

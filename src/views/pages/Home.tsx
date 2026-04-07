@@ -15,12 +15,12 @@ export default function Home(pageProps: Props) {
 	return (
 		<>
 			<Head>
-				<title>Hatch — A fullstack starter for Express, Inertia &amp; React</title>
+				<title>Hatch JS — A fullstack starter for Express, Inertia &amp; React</title>
 				<meta
 					name="description"
-					content="Hatch compresses the complexity of modern web apps. Server-rendered React on top of Express — no API layer, no glue code, no overthinking."
+					content="Hatch JS compresses the complexity of modern web apps. Server-rendered React on top of Express — no API layer, no glue code, no overthinking."
 				/>
-				<meta property="og:title" content="Hatch — A fullstack starter for Express, Inertia & React" />
+				<meta property="og:title" content="Hatch JS — A fullstack starter for Express, Inertia & React" />
 				<meta
 					property="og:description"
 					content="Server-rendered React on top of Express. Auth, sessions, ORM, migrations and SSR included."
@@ -70,7 +70,7 @@ export default function Home(pageProps: Props) {
 							of modern web apps.
 						</h1>
 						<p className="mt-8 max-w-2xl text-xl leading-8 text-gray-600">
-							Hatch is a server-rendered React stack on top of Express. No API layer.
+							Hatch JS is a server-rendered React stack on top of Express. No API layer.
 							No fetch glue. No meta-framework. Write controllers, render pages, ship.
 						</p>
 
@@ -392,7 +392,7 @@ const STEPS = [
 const FAQS = [
 	{
 		q: 'Why not Next.js?',
-		a: 'Next is great when you want a meta-framework. Hatch is for teams who already know Express, want full control of the request lifecycle, and would rather render React from a controller than learn another router.',
+		a: 'Next is great when you want a meta-framework. Hatch JS is for teams who already know Express, want full control of the request lifecycle, and would rather render React from a controller than learn another router.',
 	},
 	{
 		q: 'Can I use Postgres?',
