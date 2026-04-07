@@ -32,7 +32,7 @@ describe("Pages Integration Tests", () => {
 				
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Home");
-				expect(pageData.props.applicationName).toBe("Express Inertia");
+				expect(pageData.props.applicationName).toBe("Hatch JS");
 			});
 
 			it("should render landing page for authenticated users", async () => {
@@ -49,7 +49,7 @@ describe("Pages Integration Tests", () => {
 				
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Home");
-				expect(pageData.props.applicationName).toBe("Express Inertia");
+				expect(pageData.props.applicationName).toBe("Hatch JS");
 			});
 		});
 
@@ -279,6 +279,46 @@ describe("Pages Integration Tests", () => {
 		});
 	});
 
+	describe("Health & Errors", () => {
+		it("GET /healthz returns 200", async () => {
+			const response = await supertest(app).get("/healthz");
+			expect(response.status).toBe(200);
+			expect(response.body.status).toBe("ok");
+		});
+
+		it("GET /readyz returns 200 when DB reachable", async () => {
+			const response = await supertest(app).get("/readyz");
+			expect(response.status).toBe(200);
+			expect(response.body.status).toBe("ready");
+		});
+
+		it("Unknown route renders Inertia Error page (404)", async () => {
+			const response = await supertest(app).get("/this-route-does-not-exist");
+			expect(response.status).toBe(200); // BaseController.render sends 200; status is in props
+			const pageData = extractInertiaPageData(response.text);
+			expect(pageData.component).toBe("Error");
+			expect(pageData.props.status).toBe(404);
+		});
+
+		it("Page-prop XSS payloads are HTML-escaped in the data-page attribute", async () => {
+			const response = await supertest(app).get("/");
+			expect(response.status).toBe(200);
+			// Raw < and > from JSON should not appear unescaped inside the attribute
+			const attr = response.text.match(/data-page="([^"]*)"/)?.[1] ?? "";
+			expect(attr).not.toMatch(/</);
+			expect(attr).not.toMatch(/>/);
+			// And the round-trip decoder still produces valid JSON
+			const pageData = extractInertiaPageData(response.text);
+			expect(pageData.component).toBe("Home");
+		});
+
+		it("Helmet security headers are present", async () => {
+			const response = await supertest(app).get("/");
+			expect(response.headers["x-content-type-options"]).toBe("nosniff");
+			expect(response.headers["x-frame-options"]).toBeDefined();
+		});
+	});
+
 	describe("User Pages", () => {
 		describe("GET /users", () => {
 			it("should render users list for authenticated users", async () => {
@@ -365,8 +405,12 @@ function extractInertiaPageData(html: string): any {
 	if (!match) {
 		throw new Error("Could not find Inertia page data in HTML");
 	}
-	
-	const encodedData = match[1];
-	const decodedData = encodedData.replace(/&quot;/g, '"');
+
+	const decodedData = match[1]
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&lt;/g, '<')
+		.replace(/&gt;/g, '>')
+		.replace(/&amp;/g, '&');
 	return JSON.parse(decodedData);
 }

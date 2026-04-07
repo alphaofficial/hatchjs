@@ -7,7 +7,7 @@ import { env } from "@/config/variables";
 const mikroOrmOptions: Options = {
 	entities: ["**/mappings/*.map.js"],
 	entitiesTs: ["**/mappings/*.map.ts"],
-	dbName: env("DB_PATH", "express-inertia.db") as string,
+	dbName: env("DB_PATH", "hatch.db") as string,
 	driver: SqliteDriver,
 	pool: {
 		// this will setup wal mode for sqlite

@@ -1,0 +1,380 @@
+# Hatch JS — Developer Guide
+
+A practical reference for building features in Hatch JS. Optimized for both humans and LLMs.
+
+Stack: **Express 5 + Inertia.js 2 + React 19 + MikroORM 6 + TypeScript + Vite + Tailwind**.
+
+The mental model: an Express controller queries the database, returns props, Inertia hands them to a React page. There is no REST layer between server and client.
+
+```
+Browser → Express route → Middleware → Controller → res.inertia('Page', props) → React SSR → HTML
+```
+
+---
+
+## Project layout
+
+```
+src/
+├── config/          # variables.ts (env), pages.ts (page registry)
+├── controllers/     # Request handlers, extend BaseController
+├── database/
+│   ├── mappings/    # MikroORM EntitySchema mappings (*.map.ts)
+│   ├── migrations/  # Auto-generated SQL migrations
+│   ├── seeder/      # Database seeders
+│   └── orm.config.ts
+├── middleware/      # auth, inertia, rateLimit, errorHandler
+├── models/          # Plain TS classes (no decorators)
+├── routes/          # route.ts — single Express Router
+├── utils/           # Hash, etc.
+├── views/
+│   ├── components/  # Shared React components
+│   ├── pages/       # Inertia page components
+│   └── client.tsx   # Client entry
+└── index.ts         # Server bootstrap
+```
+
+---
+
+## 1. Adding a page
+
+A "page" is a React component rendered by a controller via Inertia.
+
+### Step 1 — Create the component
+
+Drop a `.tsx` file in `src/views/pages/`. Pages can be nested with `/`.
+
+```tsx
+// src/views/pages/Posts.tsx
+import { Head, Link } from '@inertiajs/react';
+import Navigation from '../components/Navigation';
+
+interface Post {
+  id: string;
+  title: string;
+}
+
+interface Props {
+  posts: Post[];
+}
+
+export default function Posts({ posts }: Props) {
+  return (
+    <>
+      <Head title="Posts" />
+      <Navigation />
+      <main className="mx-auto max-w-4xl p-6">
+        <h1 className="text-3xl font-bold">Posts</h1>
+        <ul className="mt-6 space-y-3">
+          {posts.map((post) => (
+            <li key={post.id}>
+              <Link href={`/posts/${post.id}`} className="text-blue-600 hover:underline">
+                {post.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </main>
+    </>
+  );
+}
+```
+
+### Step 2 — Register the page name
+
+Add it to the union type so the compiler can type-check controller calls.
+
+```ts
+// src/config/pages.ts
+const VIEWS = [
+  'About', 'Home', 'User', 'Users', 'Dashboard', 'Error',
+  'Auth/Login', 'Auth/Register',
+  'Posts', // ← add here
+] as const;
+export type PageName = (typeof VIEWS)[number];
+```
+
+### Step 3 — Access shared props
+
+Globally shared props (set in `src/middleware/inertia.ts`) are merged into every page automatically. Use `usePage` if you need them inside a component:
+
+```tsx
+import { usePage } from '@inertiajs/react';
+
+const { props } = usePage<{ user: { name: string } | null; applicationName: string }>();
+```
+
+Currently shared: `applicationName`, `isAuthenticated`, `user`.
+
+---
+
+## 2. Adding a controller
+
+Controllers extend `BaseController` and expose **static** methods that match Express handler signatures.
+
+```ts
+// src/controllers/PostController.ts
+import { Request, Response } from 'express';
+import { BaseController } from './BaseController';
+import { Post } from '../models/Post';
+
+export class PostController extends BaseController {
+  static async index(req: Request, res: Response) {
+    const em = req.entityManager;
+    const posts = await em.findAll(Post);
+
+    const instance = new PostController();
+    return instance.render(req, res, 'Posts', { posts });
+  }
+
+  static async show(req: Request, res: Response) {
+    const em = req.entityManager;
+    const post = await em.findOne(Post, { id: req.params.id });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const instance = new PostController();
+    return instance.render(req, res, 'Post', { post });
+  }
+
+  static async create(req: Request, res: Response) {
+    const em = req.entityManager;
+    const post = new Post(/* ... */);
+    await em.persistAndFlush(post);
+    return res.redirect(`/posts/${post.id}`);
+  }
+}
+```
+
+**Conventions**
+
+- `req.entityManager` is a forked MikroORM `EntityManager` (one per request).
+- `req.user()`, `req.user_id()`, `req.is_authenticated()`, `req.authenticate(user)`, `req.logout()` are auth helpers.
+- `req.logger` is a Pino instance.
+- `instance.render(req, res, 'PageName', props, { title })` is the canonical way to send an Inertia response. The page name is type-checked against `PageName`.
+- For redirects, return `res.redirect('/...')`.
+- For JSON errors, return `res.status(404).json(...)`.
+
+---
+
+## 3. Wiring routes
+
+All routes live in `src/routes/route.ts`. Auth guards are applied per-route.
+
+```ts
+// src/routes/route.ts
+import { PostController } from '../controllers/PostController';
+import { auth } from '../middleware/auth';
+
+route.get('/posts', auth, PostController.index);
+route.get('/posts/:id', auth, PostController.show);
+route.post('/posts', auth, PostController.create);
+```
+
+**Available guards** (`src/middleware/auth.ts`):
+
+| Guard   | Effect                                                    |
+| ------- | --------------------------------------------------------- |
+| `auth`  | Redirects to `/login` if the request is unauthenticated   |
+| `guest` | Redirects to `/home` if the request is already authed     |
+
+---
+
+## 4. Adding a data model
+
+Models are plain TypeScript classes. The ORM mapping lives in a separate file so the model stays decorator-free.
+
+### Step 1 — Define the class
+
+```ts
+// src/models/Post.ts
+import { v4 as uuid } from 'uuid';
+
+export class Post {
+  id: string = uuid();
+  title!: string;
+  body!: string;
+  authorId!: string;
+  createdAt: Date = new Date();
+  updatedAt: Date = new Date();
+
+  constructor(title: string, body: string, authorId: string) {
+    this.title = title;
+    this.body = body;
+    this.authorId = authorId;
+  }
+}
+```
+
+### Step 2 — Add the EntitySchema mapping
+
+```ts
+// src/database/mappings/post.map.ts
+import { EntitySchema } from '@mikro-orm/core';
+import { Post } from '../../models/Post';
+
+export const PostMapper = new EntitySchema<Post>({
+  class: Post,
+  tableName: 'posts',
+  properties: {
+    id: { type: 'string', primary: true },
+    title: { type: 'string' },
+    body: { type: 'text' },
+    authorId: { type: 'string', index: true },
+    createdAt: { type: 'Date', defaultRaw: 'CURRENT_TIMESTAMP' },
+    updatedAt: { type: 'Date', defaultRaw: 'CURRENT_TIMESTAMP', onUpdate: () => new Date() },
+  },
+});
+```
+
+The ORM auto-discovers any file matching `**/mappings/*.map.ts`.
+
+### Step 3 — Generate and run a migration
+
+```bash
+npm run migration:generate   # diffs the schema and creates a new migration
+npm run migration:run        # applies pending migrations
+```
+
+Other migration scripts:
+
+| Script                     | Purpose                                |
+| -------------------------- | -------------------------------------- |
+| `npm run migration:create` | Create an empty migration              |
+| `npm run migration:revert` | Roll back the last migration           |
+| `npm run migration:status` | Show pending migrations                |
+| `npm run db:seed`          | Run the default seeder                 |
+
+### Step 4 — Use it from a controller
+
+```ts
+const em = req.entityManager;
+
+// Read
+const post = await em.findOne(Post, { id });
+const all = await em.findAll(Post);
+
+// Write
+const post = new Post('Hello', 'Body', req.user_id()!);
+await em.persistAndFlush(post);
+
+// Update
+post.title = 'Updated';
+await em.flush();
+
+// Delete
+await em.removeAndFlush(post);
+```
+
+---
+
+## 5. Authentication
+
+Sessions are DB-backed (`sessions` table) and signed with `SESSION_SECRET`. Passwords are hashed with bcrypt via `Hash.make` / `Hash.check`.
+
+```ts
+import { Hash } from '../utils/Hash';
+
+// Register
+const password = await Hash.make(req.body.password);
+const user = new User(uuid(), name, email, password);
+await em.persistAndFlush(user);
+req.authenticate(user);
+
+// Login
+const user = await em.findOne(User, { email });
+if (!user || !(await Hash.check(req.body.password, user.password))) {
+  return instance.render(req, res, 'Auth/Login', { errors: { email: 'Invalid credentials' } });
+}
+req.authenticate(user);
+
+// Logout
+await req.logout();
+res.redirect('/login');
+```
+
+---
+
+## 6. Environment variables
+
+Defined and validated by Zod in `src/config/variables.ts`. Boot fails fast on missing required vars in production.
+
+| Variable                    | Default                     | Notes                                          |
+| --------------------------- | --------------------------- | ---------------------------------------------- |
+| `NODE_ENV`                  | `development`               | `development` \| `production` \| `test`        |
+| `PORT`                      | `3000`                      |                                                |
+| `APP_NAME`                  | `Hatch JS`                  | Shown in nav and `<title>`                     |
+| `APP_URL`                   | `http://localhost:3000`     |                                                |
+| `TRUST_PROXY`               | `loopback`                  | Express `trust proxy` setting                  |
+| `SESSION_SECRET`            | _(required in prod)_        | `openssl rand -hex 32`                         |
+| `SESSION_MAX_AGE`           | `86400000`                  | Session lifetime in ms                         |
+| `DB_PATH`                   | `hatch.db`                  | SQLite file path                               |
+| `RATE_LIMIT_ENABLED`        | `false`                     | Enable auth rate limiter                       |
+| `RATE_LIMIT_AUTH_MAX`       | `5`                         | Max attempts per window                        |
+| `RATE_LIMIT_AUTH_WINDOW_MS` | `60000`                     | Window length in ms                            |
+
+Read values via `variables.X` (typed) or `env('KEY', default)`.
+
+---
+
+## 7. Testing
+
+Integration tests live in `test/integration/` and use `supertest` against a real Express app booted by `bootstrapTestApp()`.
+
+```ts
+import supertest from 'supertest';
+import { bootstrapTestApp } from '../testHelpers';
+
+const { app } = await bootstrapTestApp();
+const response = await supertest(app).get('/posts');
+expect(response.status).toBe(200);
+```
+
+Run with:
+
+```bash
+npm run test:integration
+```
+
+---
+
+## 8. End-to-end checklist for a new feature
+
+1. Create the model in `src/models/Foo.ts`.
+2. Create the mapping in `src/database/mappings/foo.map.ts`.
+3. Run `npm run migration:generate && npm run migration:run`.
+4. Create the controller in `src/controllers/FooController.ts`.
+5. Create the page component in `src/views/pages/Foo.tsx`.
+6. Register the page name in `src/config/pages.ts`.
+7. Wire the route in `src/routes/route.ts`.
+8. Add an integration test in `test/integration/requests/`.
+9. `npm run build && npm run test:integration`.
+
+---
+
+## 9. Releases & versioning
+
+Hatch JS uses **CalVer** in the form `YYYY.MM.DD` (e.g. `2026.04.07`). When more
+than one release ships on the same day, a numeric suffix is appended:
+`2026.04.07.1`, `2026.04.07.2`, …
+
+Releases are produced by `.github/workflows/release.yml`:
+
+- Manually triggered from the GitHub Actions tab (`workflow_dispatch`).
+- Creates an annotated git tag and a GitHub release with auto-generated notes.
+
+The installer always pulls the **latest released tag** by default. Override with:
+
+```bash
+curl -fsSL .../install.sh | bash -s -- --tag 2026.04.07
+curl -fsSL .../install.sh | bash -s -- --branch main      # bleeding edge
+```
+
+The cloned project records the version it was scaffolded from in
+`package.json` under the `hatch` field:
+
+```json
+{ "hatch": { "version": "2026.04.07", "kind": "tag" } }
+```
