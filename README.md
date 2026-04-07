@@ -18,17 +18,6 @@ Non-interactive (defaults, fastest):
 curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash -s -- --quick my-app
 ```
 
-The installer:
-
-- verifies Node ≥ 20 and `git`
-- prompts you for app name, description, author, and database (or uses defaults with `--quick`)
-- shallow-clones the repo
-- generates a strong `SESSION_SECRET` and writes your settings into `.env`
-- updates `package.json` with your project metadata
-- removes the source-only test suite from your scaffold
-- runs `npm ci` and applies migrations
-- initializes a fresh git history
-
 Flags: `--quick`, `--branch <name>`, `--no-install`, `--no-git`.
 
 ## What's included
