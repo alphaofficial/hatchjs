@@ -5,17 +5,20 @@ import { UserController } from '../controllers/UserController';
 import { AuthController } from '../controllers/AuthController';
 import { InertiaExpressMiddleware } from '../middleware/inertia';
 import { auth, guest } from '../middleware/auth';
+import { authRateLimit } from '../middleware/rateLimit';
 
 const route = Router();
 
 // Apply Inertia middleware to all routes
 route.use(InertiaExpressMiddleware.apply);
 
+const authLimiter = authRateLimit();
+
 // Guest routes (only accessible when not authenticated)
 route.get('/login', guest, AuthController.showLogin);
-route.post('/login', guest, AuthController.login);
+route.post('/login', authLimiter, guest, AuthController.login);
 route.get('/register', guest, AuthController.showRegister);
-route.post('/register', guest, AuthController.register);
+route.post('/register', authLimiter, guest, AuthController.register);
 
 // Public routes
 route.get('/', PublicController.index);

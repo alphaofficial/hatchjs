@@ -3,6 +3,26 @@ import { PageName } from '../config/pages';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const HTML_ESCAPES: Record<string, string> = {
+	'&': '&amp;',
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;',
+	"'": '&#39;',
+};
+
+function escapeHtml(value: string): string {
+	return value.replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
+}
+
+/**
+ * Encodes a string for safe placement inside an HTML attribute value.
+ * Browsers automatically decode these entities when reading `data-*` attributes.
+ */
+function escapeHtmlAttribute(value: string): string {
+	return escapeHtml(value);
+}
+
 export class BaseController {
 	public async render(req: Request, res: Response, componentName: PageName, componentProps: any = {}, documentMetadata: any = {}) {
 		const inertia = req.inertia;
@@ -18,9 +38,9 @@ export class BaseController {
 			const template = fs.readFileSync(templatePath, 'utf-8');
 
 			const html = template
-				.replace('{{TITLE}}', documentMetadata.title || 'Express Inertia App')
+				.replace('{{TITLE}}', escapeHtml(documentMetadata.title || 'Express Inertia App'))
 				.replace('{{HEAD}}', documentMetadata.head || '')
-				.replace('{{PAGE_DATA}}', JSON.stringify(result).replace(/"/g, '&quot;'))
+				.replace('{{PAGE_DATA}}', escapeHtmlAttribute(JSON.stringify(result)))
 				.replace('{{CLIENT_ENTRY}}', '/app.js');
 
 			return res.send(html);
