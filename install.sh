@@ -184,10 +184,8 @@ ok "Source fetched"
 cd "$APP_SLUG"
 
 # --- prune source-only files -----------------------------------------------
-info "Pruning files not needed in your scaffold"
 rm -rf test
 rm -f install.sh Dockerfile ecosystem.config.js start.sh
-ok "Removed test/, install.sh, and deploy artifacts"
 
 # --- patch package.json -----------------------------------------------------
 info "Updating package.json"
