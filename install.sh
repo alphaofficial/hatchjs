@@ -22,6 +22,8 @@ REF=""           # Resolved later — defaults to latest released tag
 REF_KIND=""      # "tag" or "branch"
 DO_INSTALL=1
 DO_GIT=1
+DO_DOCKER=0
+DO_PM2=0
 QUICK=0
 TARGET_DIR=""
 
@@ -66,6 +68,8 @@ slugify() {
 while [ $# -gt 0 ]; do
   case "$1" in
     --quick)        QUICK=1 ;;
+    --docker)       DO_DOCKER=1 ;;
+    --pm2)          DO_PM2=1 ;;
     --no-install)   DO_INSTALL=0 ;;
     --no-git)       DO_GIT=0 ;;
     --branch)       shift; REF="${1:-main}"; REF_KIND="branch" ;;
@@ -80,6 +84,8 @@ Usage:
 
 Options:
   --quick           Skip prompts and use defaults
+  --docker          Include a Dockerfile for container builds
+  --pm2             Include pm2 ecosystem.config.js + start.sh
   --tag <name>      Pin a specific release tag (default: latest release)
   --branch <name>   Clone a branch instead of a release tag
   --no-install      Skip 'npm install' and migrations
@@ -145,6 +151,10 @@ else
   APP_AUTHOR=$(prompt "Author" "$DEFAULT_AUTHOR")
   APP_DB=$(prompt "Database (sqlite|postgres)" "sqlite")
   APP_PORT=$(prompt "Dev server port" "3000")
+  ANS=$(prompt "Include Dockerfile? (y/N)" "n")
+  case "$ANS" in y|Y|yes|YES) DO_DOCKER=1 ;; esac
+  ANS=$(prompt "Include pm2 (ecosystem.config.js + start.sh)? (y/N)" "n")
+  case "$ANS" in y|Y|yes|YES) DO_PM2=1 ;; esac
 fi
 
 case "$APP_DB" in
@@ -185,7 +195,34 @@ cd "$APP_SLUG"
 
 # --- prune source-only files -----------------------------------------------
 rm -rf test
-rm -f install.sh Dockerfile ecosystem.config.js start.sh
+rm -f install.sh
+
+# Deploy artifacts: keep only what the user opted into.
+if [ "$DO_PM2" != "1" ]; then
+  rm -f ecosystem.config.js start.sh
+fi
+
+if [ "$DO_DOCKER" != "1" ]; then
+  rm -f Dockerfile
+elif [ "$DO_PM2" != "1" ]; then
+  # Docker without pm2 — overwrite the upstream pm2-coupled Dockerfile
+  # with a slim node-only image.
+  cat > Dockerfile <<'DOCKER'
+FROM node:22-alpine
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
+DOCKER
+fi
 
 # --- replace marketing landing with a minimal starter Home -----------------
 cat > src/views/pages/Home.tsx <<'TSX'
