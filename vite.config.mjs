@@ -8,10 +8,12 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
+    publicDir: false,
     build: {
       emptyOutDir: false,
       sourcemap: true,
       outDir: 'public',
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         input: resolve(__dirname, 'src/views/main.tsx'),
         output: {
@@ -19,7 +21,9 @@ export default defineConfig(({ mode }) => {
           chunkFileNames: '[name].js',
           assetFileNames: '[name].[ext]',
           dir: 'public',
-          manualChunks: undefined,
+          manualChunks: {
+            react: ['react', 'react-dom', '@inertiajs/react'],
+          },
         }
       }
     },
