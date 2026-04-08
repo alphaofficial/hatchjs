@@ -264,19 +264,28 @@ The ORM auto-discovers any file matching `**/mappings/*.map.ts`.
 
 ### Step 3 — Generate and run a migration
 
+The common case is `npm run migrate`, which diffs your entities against the DB and applies the result:
+
 ```bash
-npm run migration:generate   # diffs the schema and creates a new migration
-npm run migration:run        # applies pending migrations
+npm run migrate   # = migration:create (diff) + migration:run (apply)
 ```
 
-Other migration scripts:
+All available migration scripts:
 
-| Script                     | Purpose                                |
-| -------------------------- | -------------------------------------- |
-| `npm run migration:create` | Create an empty migration              |
-| `npm run migration:revert` | Roll back the last migration           |
-| `npm run migration:status` | Show pending migrations                |
-| `npm run db:seed`          | Run the default seeder                 |
+| Script                      | Purpose                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `npm run migrate`           | Generate a migration from the entity/DB diff, then apply it. Use after editing entities.|
+| `npm run migration:create`  | Diff entities vs. DB and write a new migration file. Does not apply it.                 |
+| `npm run migration:run`     | Apply any pending migration files (`migration:up`). Use after pulling teammates' code.  |
+| `npm run migration:revert`  | Roll back the last applied migration (`migration:down`).                                |
+| `npm run migration:status`  | Check whether any migrations are pending.                                               |
+| `npx mikro-orm migration:fresh`       | Drop the schema and re-run every migration from scratch. Destructive; dev only.|
+| `npx mikro-orm migration:create --blank` | Create an empty migration for hand-written SQL (e.g. data backfills).        |
+| `npm run db:seed`           | Run the default seeder.                                                                 |
+
+> **Note:** MikroORM's CLI does not have a `migration:generate` command — "generate" is `migration:create` (it writes a migration file containing the entity/DB diff). `--blank` suppresses the diff.
+
+**Typical dev loop:** edit an entity → `npm run migrate` → commit the new migration file alongside the entity change. Teammates just run `npm run migration:run` after pulling.
 
 ### Step 4 — Use it from a controller
 

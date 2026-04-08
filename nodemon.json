@@ -1,0 +1,5 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": ["public/**", "src/views/**", "src/database/migrations/**", "**/*.test.ts"]
+}

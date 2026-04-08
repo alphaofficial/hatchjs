@@ -4,7 +4,7 @@
   "description": "Hatch JS — a fullstack starter for Express, Inertia, and React.",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run pages:watch\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "tsx scripts/dev.ts",
     "dev:server": "nodemon --exec tsx src/index.ts",
     "dev:client": "vite build --watch",
     "scaffold": "bash scripts/scaffold.sh",
@@ -22,8 +22,7 @@
     "migration:revert": "mikro-orm migration:down",
     "migration:create": "mikro-orm migration:create",
     "migration:status": "mikro-orm migration:check",
-    "migration:generate": "mikro-orm migration:generate",
-    "migrate": "npm run migration:generate && npm run migration:run",
+    "migrate": "npm run migration:create && npm run migration:run",
     "db:seed": "mikro-orm seeder:run"
   },
   "keywords": [],
