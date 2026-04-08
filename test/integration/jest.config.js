@@ -6,7 +6,10 @@ const tsJestTransformCfg = createDefaultPreset().transform;
 module.exports = {
 	testEnvironment: "node",
 	displayName: "integration",
-	testMatch: ["<rootDir>/requests/**/*.ts"],
+	testMatch: [
+		"<rootDir>/requests/**/*.ts",
+		"<rootDir>/scripts/**/*.spec.ts",
+	],
 	transform: {
 		...tsJestTransformCfg,
 	},
