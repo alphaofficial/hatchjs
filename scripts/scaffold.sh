@@ -324,6 +324,13 @@ cmd_page() {
 		make_mapping "$base" "$fields"
 		info "next: npm run migrate"
 	fi
+	# Refresh the generated pages.ts registry so the new page is wired up.
+	# Skipped when there's no package.json (e.g. scaffold.sh tests in a tmp sandbox)
+	# or when SCAFFOLD_SKIP_PAGES_GENERATE=1.
+	if [ "${SCAFFOLD_SKIP_PAGES_GENERATE:-0}" != "1" ] && [ -f package.json ] && \
+		grep -q '"pages:generate"' package.json; then
+		npm run -s pages:generate >/dev/null || info "pages:generate failed; run 'npm run pages:generate' manually"
+	fi
 	green "done. visit ${url}"
 }
 
