@@ -322,7 +322,7 @@ cmd_page() {
 	if [ "$with_model" = "1" ]; then
 		make_model "$base" "$fields"
 		make_mapping "$base" "$fields"
-		info "next: npm run migration:generate && npm run migration:run"
+		info "next: npm run migrate"
 	fi
 	green "done. visit ${url}"
 }
@@ -340,7 +340,7 @@ cmd_model() {
 	assert_pascal "$name"
 	make_model "$name" "$fields"
 	make_mapping "$name" "$fields"
-	info "next: npm run migration:generate && npm run migration:run"
+	info "next: npm run migrate"
 }
 
 cmd_controller() {

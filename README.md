@@ -38,6 +38,7 @@ Flags: `--quick`, `--branch <name>`, `--no-install`, `--no-git`.
 | `npm run build`              | Production build (client + server)    |
 | `npm start`                  | Run built server (`dist/index.js`)    |
 | `npm test`                   | Run integration tests                 |
+| `npm run migrate`            | Generate + apply migrations           |
 | `npm run migration:run`      | Apply pending migrations              |
 | `npm run migration:create`   | Create a blank migration              |
 | `npm run migration:generate` | Generate a migration from entity diff |

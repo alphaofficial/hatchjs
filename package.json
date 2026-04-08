@@ -23,6 +23,7 @@
     "migration:create": "mikro-orm migration:create",
     "migration:status": "mikro-orm migration:check",
     "migration:generate": "mikro-orm migration:generate",
+    "migrate": "npm run migration:generate && npm run migration:run",
     "db:seed": "mikro-orm seeder:run"
   },
   "keywords": [],

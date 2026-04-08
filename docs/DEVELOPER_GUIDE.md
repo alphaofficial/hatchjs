@@ -66,7 +66,7 @@ npm run scaffold -- model Post --fields "title:string,body:text,publishedAt:date
 npm run scaffold -- page Post --model --fields "title:string,body:text"  # page + controller + route + model + mapping
 ```
 
-Field types: `string`, `text`, `int`, `bool`, `date`, `datetime`, `decimal`, `uuid`, `json`. Append `?` for nullable (e.g. `publishedAt:datetime?`). After scaffolding a model, run `npm run migration:generate && npm run migration:run` to apply it to the database.
+Field types: `string`, `text`, `int`, `bool`, `date`, `datetime`, `decimal`, `uuid`, `json`. Append `?` for nullable (e.g. `publishedAt:datetime?`). After scaffolding a model, run `npm run migrate` to apply it to the database.
 
 The steps below describe what the scaffold produces so you can do it by hand
 or tweak what was generated.
@@ -375,7 +375,7 @@ npm run test:integration
 
 1. `npm run scaffold -- model Foo` (model + mapping).
 2. Edit the generated mapping to add your columns.
-3. `npm run migration:generate && npm run migration:run`.
+3. `npm run migrate`.
 4. `npm run scaffold -- page Foo` (controller + page + route in one shot).
 5. `npm run build`.
 
