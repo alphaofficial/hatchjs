@@ -5,8 +5,8 @@ import { SqliteDriver } from "@mikro-orm/sqlite";
 import { env } from "@/config/variables";
 
 const mikroOrmOptions: Options = {
-	entities: ["**/mappings/*.map.js"],
-	entitiesTs: ["**/mappings/*.map.ts"],
+	entities: ["dist/database/mappings/*.map.js"],
+	entitiesTs: ["src/database/mappings/*.map.ts"],
 	dbName: env("DB_PATH", "hatch.db") as string,
 	driver: SqliteDriver,
 	pool: {
