@@ -4,7 +4,7 @@
   "description": "Hatch JS — a fullstack starter for Express, Inertia, and React.",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx scripts/dev.ts",
+    "dev": "concurrently --names \"pages,server,client\" --prefix-colors \"yellow,cyan,magenta\" \"npm run pages:watch\" \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "nodemon --exec tsx src/index.ts",
     "dev:client": "vite build --watch",
     "scaffold": "bash scripts/scaffold.sh",

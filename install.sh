@@ -187,7 +187,7 @@ fi
 # --- clone ------------------------------------------------------------------
 echo
 info "Cloning $REPO_URL ($REF_KIND: $REF) into $APP_SLUG"
-git clone --depth=1 --branch "$REF" --quiet "$REPO_URL" "$APP_SLUG"
+git -c advice.detachedHead=false clone --depth=1 --branch "$REF" --quiet "$REPO_URL" "$APP_SLUG"
 rm -rf "$APP_SLUG/.git"
 ok "Source fetched"
 
