@@ -182,7 +182,7 @@ emit_model_fields() {
 		local fname="${pair%%:*}"
 		local spec="${pair#*:}"
 		local resolved ts _mikro nullable
-		resolved="$(resolve_type "$spec")"
+		resolved="$(resolve_type "$spec")" || exit 1
 		IFS=' ' read -r ts _mikro nullable <<< "$resolved"
 		if [ "$nullable" = "1" ]; then
 			printf '\t%s?: %s;\n' "$fname" "$ts"
@@ -201,7 +201,7 @@ emit_mapping_fields() {
 		local fname="${pair%%:*}"
 		local spec="${pair#*:}"
 		local resolved _ts mikro nullable
-		resolved="$(resolve_type "$spec")"
+		resolved="$(resolve_type "$spec")" || exit 1
 		IFS=' ' read -r _ts mikro nullable <<< "$resolved"
 		if [ "$nullable" = "1" ]; then
 			printf '\t\t%s: { type: "%s", nullable: true },\n' "$fname" "$mikro"
