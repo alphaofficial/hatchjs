@@ -448,23 +448,33 @@ Every dependency is here for a deliberate reason. If you want to remove one, thi
 ## Testing
 
 ```bash
-npm test
+npm test              # integration + E2E
+npm run test:integration  # Jest + supertest only
+npm run test:e2e          # Playwright browser tests only
 ```
 
-Integration tests boot the full Express stack against a real SQLite database and cover:
+### Integration tests (Jest + supertest)
 
-- Public, auth, and user pages (rendering, redirects, validation)
-- Login / register / logout flows including session persistence
-- Password hashing round-trip
-- Health endpoints (`/healthz`, `/readyz`)
-- 404 → Inertia `Error` page
-- Global error handler rendering on thrown errors
-- HTML escaping of Inertia page props (XSS guard)
-- Helmet security headers present
-- Rate limiter tripping at the configured threshold and acting as a no-op when disabled
-- Body-size limit returning 413 on oversized payloads
+Boot the full Express stack against a real SQLite database. Suites under `test/integration/requests/`:
 
-See `test/integration/requests/`.
+| Suite | What it covers |
+|---|---|
+| `auth.spec.ts` | Login, register, logout, forgot-password, reset-password, email verification |
+| `pages.spec.ts` | Public / auth / user pages — rendering, redirects, validation |
+| `hardening.spec.ts` | Helmet headers, rate limiter, body-size limit, XSS guard, error handler |
+| `cache.spec.ts` | `Cache.get / set / delete / flush`, TTL expiry, memory driver |
+| `events.spec.ts` | `Emitter.on / emit / off`, typed events via `HatchEvents` |
+| `mail.spec.ts` | `Mailer.send` with log driver; `MAIL_DRIVER` switching |
+| `queue.spec.ts` | `Queue.dispatch` no-op when `DATABASE_URL` unset, payload shape |
+| `storage.spec.ts` | `Storage.put / get / delete / url / exists`, local and memory drivers |
+
+### E2E tests (Playwright)
+
+Spin up a real browser against a built frontend. Suites under `test/integration/playwright/`:
+
+- `auth.spec.ts` — full UI flows: register → verify-email redirect, login/logout, invalid credentials, forgot-password page
+
+See `test/integration/` for all test source files.
 
 ## License
 
