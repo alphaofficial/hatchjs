@@ -302,6 +302,52 @@ Cache.registerDriver('redis', new RedisCacheDriver());
 // then set CACHE_DRIVER=redis in your env
 ```
 
+## Storage
+
+File storage backed by a `local` driver (default) or an in-process `memory` driver. Switch drivers with the `STORAGE_DRIVER` env var. The local driver writes files under the `STORAGE_PATH` directory and serves them at `/storage/<path>`.
+
+```ts
+import { Storage } from './lib/storage';
+
+// Write a file
+await Storage.put('uploads/avatar.png', imageBuffer);
+
+// Read a file back
+const data: Buffer = await Storage.get('uploads/avatar.png');
+
+// Delete a file
+await Storage.delete('uploads/avatar.png');
+
+// Get the public URL for a file
+const publicUrl: string = Storage.url('uploads/avatar.png');
+// → http://localhost:3000/storage/uploads/avatar.png
+
+// Check whether a file exists
+const exists: boolean = await Storage.exists('uploads/avatar.png');
+```
+
+| Driver  | Description                                       | Notes                                      |
+| ------- | ------------------------------------------------- | ------------------------------------------ |
+| `local` | Writes to disk under `STORAGE_PATH` (default `storage/`) | Set `STORAGE_DRIVER=local` (default)  |
+| `memory` | Stores files in-process memory                   | Useful for tests; data lost on restart     |
+
+Register a custom driver that implements the `StorageDriver` interface:
+
+```ts
+import { Storage, StorageDriver } from './lib/storage';
+
+class S3Driver implements StorageDriver {
+    async put(filePath: string, data: Buffer | string): Promise<void> { /* ... */ }
+    async get(filePath: string): Promise<Buffer> { /* ... */ }
+    async delete(filePath: string): Promise<void> { /* ... */ }
+    url(filePath: string): string { return `https://cdn.example.com/${filePath}`; }
+    async exists(filePath: string): Promise<boolean> { /* ... */ }
+}
+
+Storage.registerDriver('s3', new S3Driver());
+// then set STORAGE_DRIVER=s3 in your env
+```
+
 ## Render an Inertia page
 
 ```ts
