@@ -423,6 +423,9 @@ Every dependency is here for a deliberate reason. If you want to remove one, thi
 | `tailwindcss`                       | Utility-first CSS                  | All styles in `src/views` are Tailwind classes.                                                                                                  |
 | `@types/express-session`            | Type definitions                   | TypeScript types for `express-session` (the lib doesn't ship its own).                                                                           |
 | `typescript`                        | Compiler                           | Pinned as a runtime dep so MikroORM CLI can compile `*.map.ts` schemas at runtime.                                                               |
+| `graphile-worker`                   | Postgres-backed job queue          | Persists jobs in Postgres and runs them reliably. Powers `Queue.dispatch` and `npm run work`. Requires `DATABASE_URL`.                           |
+| `node-cron`                         | Cron-style task scheduler          | Triggers `Scheduler.schedule` handlers on a cron expression. Started with `npm run scheduler`.                                                   |
+| `nodemailer`                        | SMTP email transport               | Used by the `smtp` Mailer driver to send real emails. The `log` driver is the dev default.                                                       |
 
 ### Dev dependencies
 
@@ -444,6 +447,7 @@ Every dependency is here for a deliberate reason. If you want to remove one, thi
 | `postcss`, `autoprefixer`                                                          | CSS processing pipeline               | Required by Tailwind to run during `vite build`.                                                                 |
 | `@types/express`, `@types/node`, `@types/react`, `@types/react-dom`, `@types/jest` | Type definitions                      | TypeScript support for the things above.                                                                         |****
 | `ts-node`                                                                          | TypeScript node runner                | Used by MikroORM CLI to load `orm.config.ts` directly.                                                           |
+| `@playwright/test`                                                                 | Browser-based E2E test runner         | Drives a real Chromium browser for the suites under `test/integration/playwright/`. Run with `npm run test:e2e`. |
 
 ## Testing
 
