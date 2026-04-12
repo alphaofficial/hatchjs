@@ -8,6 +8,12 @@ A batteries-included fullstack starter built on **Express 5**, **Inertia.js**, *
 
 📖 **[Developer Guide](./docs/DEVELOPER_GUIDE.md)** — how to add pages, controllers, models, migrations, auth, and more.
 
+## Prerequisites
+
+- **Node.js 22+** — download from [nodejs.org](https://nodejs.org/)
+- **npm** — ships with Node.js
+- **PostgreSQL** *(optional)* — required only for the background job queue ([Graphile Worker](https://worker.graphile.org/)). The queue gracefully no-ops when `DATABASE_URL` is not set, so PostgreSQL is not needed for general development.
+
 ## Quick start
 
 Interactive scaffold (recommended):
