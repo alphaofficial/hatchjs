@@ -393,14 +393,44 @@ const FEATURES = [
 			'Inertia.js bridges Express controllers and React components. SSR on first load, SPA after.',
 	},
 	{
-		title: 'Auth & sessions',
+		title: 'Complete auth flows',
 		description:
-			'bcrypt password hashing, DB-backed sessions, guest/auth route guards, helpers on req.',
+			'Registration, login, forgot password, password reset, and email verification — all wired up and ready to extend.',
 	},
 	{
 		title: 'MikroORM with migrations',
 		description:
 			'EntitySchema mappings (no decorators). SQLite by default, Postgres-ready.',
+	},
+	{
+		title: 'Background Queue',
+		description:
+			'Graphile Worker-powered job queue. Dispatch jobs with Queue.dispatch() and run workers with npm run work.',
+	},
+	{
+		title: 'Mailer',
+		description:
+			'Send email with Mailer.send(). Ships with log and SMTP drivers. Register custom drivers for any provider.',
+	},
+	{
+		title: 'Task Scheduler',
+		description:
+			'Cron-style task scheduling via node-cron. Register jobs with Scheduler.schedule() and start with npm run scheduler.',
+	},
+	{
+		title: 'Typed Event Bus',
+		description:
+			'In-process events with Emitter.on() / Emitter.emit(). Extend HatchEvents for fully type-safe custom events.',
+	},
+	{
+		title: 'Cache',
+		description:
+			'Simple key-value cache with get / set / delete / flush. In-memory driver included; pluggable for Redis.',
+	},
+	{
+		title: 'File Storage',
+		description:
+			'Store and retrieve files with Storage.put() / get() / url(). Local disk and memory drivers included.',
 	},
 	{
 		title: 'Production hardened',
