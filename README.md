@@ -499,6 +499,17 @@ The Docker image also configures `pm2-logrotate` to rotate logs at 5 MB, retain 
 
 For a full breakdown of every dependency and why it's included, see the [Developer Guide](./docs/DEVELOPER_GUIDE.md).
 
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b my-feature`)
+3. Make your changes and add tests
+4. Run `npm test` to verify everything passes
+5. Commit your changes and push to your fork
+6. Open a pull request against `main`
+
+Please keep PRs focused — one feature or fix per pull request.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
