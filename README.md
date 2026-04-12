@@ -123,7 +123,35 @@ req.authenticate(user: User): void
 req.logout(): Promise<void>
 ```
 
-`auth` and `guest` middleware live in `src/middleware/auth.ts`.
+### Route guards
+
+Three middleware guards live in `src/middleware/auth.ts`:
+
+| Guard      | Behaviour                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| `auth`     | Redirects unauthenticated users to `/login`                                                    |
+| `guest`    | Redirects authenticated users to `/home`                                                       |
+| `verified` | Requires auth **and** a verified email; redirects unverified users to `/verify-email`          |
+
+```ts
+import { auth, guest, verified } from '../middleware/auth';
+
+route.get('/dashboard', verified, DashboardController.show); // auth + verified
+route.get('/settings',  auth,     SettingsController.show);  // auth only
+route.get('/login',     guest,    AuthController.showLogin);  // guests only
+```
+
+### Auth flows
+
+| Route | Method | Guard | Description |
+| ----- | ------ | ----- | ----------- |
+| `/forgot-password` | GET | `guest` | Render the forgot-password form |
+| `/forgot-password` | POST | `guest` | Send a password-reset email |
+| `/reset-password/:token` | GET | `guest` | Render the reset-password form |
+| `/reset-password` | POST | `guest` | Validate token and update password |
+| `/verify-email` | GET | `auth` | Render the email-verification notice page |
+| `/verify-email/:token` | GET | `auth` | Verify the token and mark email as verified |
+| `/email/resend-verification` | POST | `auth` | Re-send the verification email |
 
 ## Render an Inertia page
 
