@@ -153,6 +153,35 @@ route.get('/login',     guest,    AuthController.showLogin);  // guests only
 | `/verify-email/:token` | GET | `auth` | Verify the token and mark email as verified |
 | `/email/resend-verification` | POST | `auth` | Re-send the verification email |
 
+## Queue
+
+Background jobs are powered by **[Graphile Worker](https://worker.graphile.org/)** and require a **PostgreSQL** database (`DATABASE_URL`).
+
+```ts
+import { Queue } from './lib/queue';
+
+// Dispatch a job from anywhere in the application
+await Queue.dispatch('send-welcome-email', { to: 'user@example.com', name: 'Alice' });
+```
+
+Jobs live in `src/jobs/`. Each file exports an `async` function that receives the typed payload:
+
+```ts
+// src/jobs/sendWelcomeEmail.ts
+export async function sendWelcomeEmail(payload: unknown): Promise<void> {
+  const { to, name } = payload as { to: string; name?: string };
+  // ... send the email
+}
+```
+
+Register jobs and start the worker in `src/worker.ts`, then run:
+
+```bash
+npm run work
+```
+
+> **Note:** If `DATABASE_URL` is not set, `Queue.dispatch` is a safe no-op (logs a warning) so the rest of the app continues to work with SQLite.
+
 ## Render an Inertia page
 
 ```ts
