@@ -13,13 +13,15 @@ const route = Router();
 route.use(InertiaExpressMiddleware.apply);
 
 // Apply rate limiter once to all sensitive auth POSTs
-route.post(['/login', '/register'], authRateLimit());
+route.post(['/login', '/register', '/forgot-password'], authRateLimit());
 
 // Guest routes (only accessible when not authenticated)
 route.get('/login', guest, AuthController.showLogin);
 route.post('/login', guest, AuthController.login);
 route.get('/register', guest, AuthController.showRegister);
 route.post('/register', guest, AuthController.register);
+route.get('/forgot-password', guest, AuthController.showForgotPassword);
+route.post('/forgot-password', guest, AuthController.forgotPassword);
 
 // Public routes
 route.get('/', PublicController.index);
