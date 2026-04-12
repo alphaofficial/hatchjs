@@ -3,6 +3,7 @@ import { BaseController } from './BaseController';
 import { Hash } from '../utils/Hash';
 import { User } from '../models/User';
 import { PasswordReset } from '../models/PasswordReset';
+import { Session } from '../models/Session';
 import { sendMail } from '../lib/mail';
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -27,11 +28,22 @@ const forgotPasswordSchema = z.object({
     email: z.email()
 });
 
+const resetPasswordSchema = z.object({
+    token: z.string().min(1),
+    email: z.email(),
+    password: z.string().min(8),
+    password_confirmation: z.string().min(8)
+}).refine(data => data.password === data.password_confirmation, {
+    message: "Passwords don't match",
+    path: ["password_confirmation"]
+});
+
 export class AuthController extends BaseController {
 
     static async showLogin(req: Request, res: Response) {
         const instance = new AuthController();
-        return instance.render(req, res, 'Auth/Login');
+        const status = req.query.reset === '1' ? 'Your password has been reset. You may now sign in.' : undefined;
+        return instance.render(req, res, 'Auth/Login', { status });
     }
 
     static async showRegister(req: Request, res: Response) {
@@ -168,6 +180,66 @@ export class AuthController extends BaseController {
                 return instance.render(req, res, 'Auth/ForgotPassword', {
                     errors: error.flatten().fieldErrors
                 });
+            }
+            throw error;
+        }
+    }
+
+    static async showResetPassword(req: Request, res: Response) {
+        const instance = new AuthController();
+        return instance.render(req, res, 'Auth/ResetPassword', {
+            token: req.params.token,
+            email: req.query.email as string ?? ''
+        });
+    }
+
+    static async resetPassword(req: Request, res: Response) {
+        const instance = new AuthController();
+
+        const renderError = (errors: Record<string, string[]>) =>
+            instance.render(req, res, 'Auth/ResetPassword', {
+                token: req.body.token ?? '',
+                email: req.body.email ?? '',
+                errors
+            });
+
+        try {
+            const validated = resetPasswordSchema.parse(req.body);
+            const em = req.entityManager;
+
+            const tokenHash = crypto
+                .createHmac('sha256', variables.APP_KEY)
+                .update(validated.token)
+                .digest('hex');
+
+            const reset = await em.findOne(PasswordReset, { email: validated.email, tokenHash });
+
+            if (!reset) {
+                return renderError({ token: ['This password reset link is invalid.'] });
+            }
+
+            const expiryMs = variables.PASSWORD_RESET_EXPIRY * 60 * 1000;
+            if (Date.now() - reset.createdAt.getTime() > expiryMs) {
+                await em.nativeDelete(PasswordReset, { email: validated.email });
+                return renderError({ token: ['This password reset link has expired. Please request a new one.'] });
+            }
+
+            const user = await em.findOne(User, { email: validated.email });
+            if (!user) {
+                return renderError({ token: ['This password reset link is invalid.'] });
+            }
+
+            user.password = await Hash.make(validated.password);
+            await em.nativeDelete(PasswordReset, { email: validated.email });
+            // Invalidate all sessions for this user
+            await em.nativeDelete(Session, { user_id: user.id });
+            await em.flush();
+
+            return res.redirect('/login?reset=1');
+
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return renderError(error.flatten().fieldErrors as Record<string, string[]>);
             }
             throw error;
         }
