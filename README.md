@@ -386,7 +386,7 @@ Storage.registerDriver('s3', new S3Driver());
 // then set STORAGE_DRIVER=s3 in your env
 ```
 
-## Render an Inertia page
+## Rendering
 
 ```ts
 // Controller
