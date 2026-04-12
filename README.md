@@ -62,9 +62,25 @@ Flags: `--quick`, `--branch <name>`, `--no-install`, `--no-git`.
 | `SESSION_MAX_AGE`           | `86400000`              | Session lifetime in ms (24h default)                             |
 | `APP_NAME`                  | `Hatch JS`              | Display name shown in the UI and `<title>`                       |
 | `DB_PATH`                   | `hatch.db`              | SQLite file path                                                 |
-| `RATE_LIMIT_ENABLED`        | `false`                 | Enable per-IP limiter on `/login` and `/register`                |
-| `RATE_LIMIT_AUTH_MAX`       | `5`                     | Max requests per window                                          |
-| `RATE_LIMIT_AUTH_WINDOW_MS` | `60000`                 | Window size in ms                                                |
+| `APP_KEY`                       | _(dev only default)_    | **Required in production.** Used for HMAC token signing. Generate with `openssl rand -hex 32` |
+| `RATE_LIMIT_ENABLED`            | `false`                 | Enable per-IP limiter on `/login` and `/register`                                             |
+| `RATE_LIMIT_AUTH_MAX`           | `5`                     | Max requests per window on auth routes                                                        |
+| `RATE_LIMIT_AUTH_WINDOW_MS`     | `60000`                 | Window size in ms for auth rate limiter                                                       |
+| `RATE_LIMIT_FEATURE_MAX`        | `60`                    | Max requests per window on feature routes                                                     |
+| `RATE_LIMIT_FEATURE_WINDOW_MS`  | `60000`                 | Window size in ms for feature rate limiter                                                    |
+| `PASSWORD_RESET_EXPIRY`         | `60`                    | Password-reset token expiry in minutes                                                        |
+| `EMAIL_VERIFICATION_EXPIRY`     | `60`                    | Email-verification token expiry in minutes                                                    |
+| `MAIL_DRIVER`                   | `log`                   | Mail transport: `log` (stdout) or `smtp`                                                      |
+| `MAIL_FROM`                     | `noreply@example.com`   | Sender address used in all outgoing emails                                                    |
+| `MAIL_HOST`                     | _(none)_                | SMTP hostname — required when `MAIL_DRIVER=smtp`                                              |
+| `MAIL_PORT`                     | `587`                   | SMTP port                                                                                     |
+| `MAIL_USER`                     | _(none)_                | SMTP username                                                                                 |
+| `MAIL_PASS`                     | _(none)_                | SMTP password                                                                                 |
+| `CACHE_DRIVER`                  | `memory`                | Cache backend driver (built-in: `memory`)                                                     |
+| `STORAGE_DRIVER`                | `local`                 | File-storage driver: `local` (disk) or `memory`                                               |
+| `STORAGE_PATH`                  | `storage`               | Root directory for the `local` storage driver                                                 |
+| `DATABASE_URL`                  | _(none)_                | PostgreSQL connection URL — required to enable the Queue (Graphile Worker)                    |
+| `SCHEDULER_ENABLED`             | `false`                 | Set to `true` to activate the cron-based task scheduler                                       |
 
 ## Project structure
 
