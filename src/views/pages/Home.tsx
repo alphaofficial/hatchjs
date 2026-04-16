@@ -170,6 +170,7 @@ function HowItWorksPipeline() {
 
 export default function Home(pageProps: Props) {
 	const { applicationName, isAuthenticated } = pageProps;
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
 	return (
 		<>
@@ -187,17 +188,17 @@ export default function Home(pageProps: Props) {
 				<meta property="og:type" content="website" />
 			</Head>
 
-			<div className="min-h-screen bg-white text-gray-900 antialiased">
+			<div className="min-h-screen overflow-x-hidden bg-white text-gray-900 antialiased">
 				{/* Top nav */}
 				<header className="border-b border-gray-200">
 					<div className="mx-auto max-w-6xl px-6 py-5 flex items-center justify-between">
-						<Link href="/" className="flex items-center gap-x-2">
+						<Link href="/" className="flex items-center gap-x-2" data-testid="site-logo">
 							<span className="inline-flex h-7 w-7 items-center justify-center rounded-sm bg-gray-900 text-white text-xs font-bold">
 								T
 							</span>
 							<span className="text-lg font-bold tracking-tight">{applicationName}</span>
 						</Link>
-						<nav className="flex items-center gap-x-8 text-sm font-semibold text-gray-700">
+						<nav className="hidden md:flex items-center gap-x-8 text-sm font-semibold text-gray-700" data-testid="desktop-nav">
 							<a href="#features" className="hover:text-gray-900">Features</a>
 							<a href="#how" className="hover:text-gray-900">How it works</a>
 							<a href="#faq" className="hover:text-gray-900">FAQ</a>
@@ -213,12 +214,51 @@ export default function Home(pageProps: Props) {
 								</Link>
 							)}
 						</nav>
+						<button
+							type="button"
+							className="md:hidden inline-flex items-center justify-center rounded-sm p-2 text-gray-700 hover:bg-gray-100"
+							onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+							aria-expanded={mobileMenuOpen}
+							aria-label="Toggle navigation menu"
+							data-testid="mobile-menu-button"
+						>
+							{mobileMenuOpen ? (
+								<svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+									<path d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							) : (
+								<svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+									<path d="M4 6h16M4 12h16M4 18h16" />
+								</svg>
+							)}
+						</button>
 					</div>
+					{mobileMenuOpen && (
+						<nav className="md:hidden border-t border-gray-200 bg-white px-6 py-4" data-testid="mobile-nav">
+							<div className="flex flex-col gap-y-4 text-sm font-semibold text-gray-700">
+								<a href="#features" className="hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>Features</a>
+								<a href="#how" className="hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>How it works</a>
+								<a href="#faq" className="hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
+								<a
+									href="https://github.com/alphaofficial/theboringarchitecture"
+									className="hover:text-gray-900"
+									onClick={() => setMobileMenuOpen(false)}
+								>
+									GitHub
+								</a>
+								{!isAuthenticated && (
+									<Link href="/login" className="hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>
+										Log in
+									</Link>
+								)}
+							</div>
+						</nav>
+					)}
 				</header>
 
 				{/* Hero */}
-				<section className="border-b border-gray-200 bg-gray-50">
-					<div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[minmax(0,1fr)_minmax(340px,460px)] lg:items-center lg:py-28">
+				<section className="border-b border-gray-200 bg-gray-50" data-testid="hero-section">
+					<div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(340px,460px)] lg:items-center lg:py-28">
 						<div>
 							<span className="inline-flex items-center gap-x-2 rounded-sm border border-gray-300 bg-white px-3 py-1 text-xs font-semibold text-gray-700">
 								<span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-900" />
@@ -232,7 +272,7 @@ export default function Home(pageProps: Props) {
 								No REST layer, no fetch glue, no meta-framework detour.
 							</p>
 
-							<div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+							<div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" data-testid="hero-cta-group">
 								{!isAuthenticated ? (
 									<Link
 										href="/register"
@@ -256,7 +296,7 @@ export default function Home(pageProps: Props) {
 								</a>
 							</div>
 
-							<div className="mt-8 grid max-w-2xl grid-cols-1 gap-3 text-sm text-gray-700 sm:grid-cols-3">
+							<div className="mt-8 grid max-w-2xl grid-cols-1 gap-3 text-sm text-gray-700 sm:grid-cols-3" data-testid="hero-stats">
 								<div className="border-l-2 border-gray-900 pl-3">
 									<span className="block font-bold text-gray-950">SSR first load</span>
 									<span>Hydrated after render</span>
@@ -272,7 +312,7 @@ export default function Home(pageProps: Props) {
 							</div>
 						</div>
 
-						<div className="rounded-sm border border-gray-900 bg-white p-3 shadow-[8px_8px_0_0_#111827]">
+						<div className="rounded-sm border border-gray-900 bg-white p-3 sm:p-4 shadow-[8px_8px_0_0_#111827]" data-testid="install-card">
 							<div className="rounded-sm bg-gray-950 p-4 text-gray-100">
 								<div className="flex items-center justify-between border-b border-gray-800 pb-3">
 									<p className="text-sm font-bold text-white">Install in one command</p>
@@ -305,7 +345,7 @@ export default function Home(pageProps: Props) {
 
 				{/* Big tagline / Optimized for X */}
 				<section className="border-b border-gray-200 bg-gray-50">
-					<div className="mx-auto max-w-6xl px-6 py-24 text-center">
+					<div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24 text-center">
 						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
 							Optimized for shipping
 						</p>
@@ -325,7 +365,7 @@ export default function Home(pageProps: Props) {
 
 			{/* Workflow / Controller → Component */}
 			<section className="border-b border-gray-200" data-testid="workflow-section">
-				<div className="mx-auto max-w-6xl px-6 py-24">
+				<div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24">
 					<div className="mx-auto max-w-3xl text-center">
 						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
 							Controller → Component
@@ -340,7 +380,7 @@ export default function Home(pageProps: Props) {
 					</div>
 					<div className="mt-16 space-y-0">
 						{/* Step 1: Route */}
-						<div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+						<div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-12">
 							<div className="flex gap-x-4">
 								<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-gray-900 text-sm font-bold text-white">
 									1
@@ -367,7 +407,7 @@ export default function Home(pageProps: Props) {
 						</div>
 
 						{/* Step 2: Controller */}
-						<div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+						<div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-12">
 							<div className="flex gap-x-4">
 								<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-gray-900 text-sm font-bold text-white">
 									2
@@ -415,7 +455,7 @@ export default function Home(pageProps: Props) {
 						</div>
 
 						{/* Step 3: React page */}
-						<div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+						<div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-12">
 							<div className="flex gap-x-4">
 								<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-gray-900 text-sm font-bold text-white">
 									3
@@ -466,7 +506,7 @@ export default function Home(pageProps: Props) {
 
 				{/* Features */}
 				<section id="features" className="border-b border-gray-200 bg-gray-50" data-testid="features-section">
-					<div className="mx-auto max-w-6xl px-6 py-24 text-center">
+					<div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24 text-center">
 						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
 							Batteries included
 						</p>
@@ -493,7 +533,7 @@ export default function Home(pageProps: Props) {
 
 				{/* How it works */}
 				<section id="how" className="border-b border-gray-200" data-testid="how-it-works-section">
-					<div className="mx-auto max-w-6xl px-6 py-24 text-center">
+					<div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24 text-center">
 						<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
 							How it works
 						</p>
@@ -501,7 +541,9 @@ export default function Home(pageProps: Props) {
 							From zero to shipping in three steps.
 						</h2>
 
-						<HowItWorksPipeline />
+						<div className="hidden md:block">
+							<HowItWorksPipeline />
+						</div>
 
 						<ol className="mt-12 grid grid-cols-1 gap-12 md:grid-cols-3 text-center">
 							{STEPS.map((step, i) => (
@@ -519,7 +561,7 @@ export default function Home(pageProps: Props) {
 
 				{/* FAQ */}
 				<section id="faq" className="border-b border-gray-200 bg-gray-50">
-					<div className="mx-auto max-w-6xl px-6 py-24">
+					<div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24">
 						<div className="text-center">
 							<p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
 								FAQ
@@ -540,8 +582,8 @@ export default function Home(pageProps: Props) {
 				</section>
 
 				{/* Bottom CTA */}
-				<section className="border-b border-gray-200 bg-gray-900 text-white">
-					<div className="mx-auto max-w-6xl px-6 py-24 text-center">
+				<section className="border-b border-gray-200 bg-gray-900 text-white" data-testid="bottom-cta-section">
+					<div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24 text-center">
 						<h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
 							Ship something this weekend.
 						</h2>
@@ -567,7 +609,7 @@ export default function Home(pageProps: Props) {
 				</section>
 
 				<footer className="bg-white">
-					<div className="mx-auto max-w-6xl px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+					<div className="mx-auto max-w-6xl px-5 py-8 sm:px-6 sm:py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
 						<p className="text-xs text-gray-500">
 							&copy; 2025 {applicationName}. Released under the MIT license.
 						</p>

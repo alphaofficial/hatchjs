@@ -145,3 +145,87 @@ test.describe("Auth UI flows", () => {
 		await expect(page.getByRole("button", { name: /send reset link/i })).toBeVisible();
 	});
 });
+
+test.describe("Mobile responsive layout", () => {
+	test.use({ viewport: { width: 375, height: 667 } });
+
+	test("mobile navigation shows hamburger menu and hides desktop nav", async ({ page }) => {
+		await page.goto("/");
+		await expect(page).toHaveURL("/");
+
+		await expect(page.getByTestId("mobile-menu-button")).toBeVisible();
+		await expect(page.getByTestId("desktop-nav")).toBeHidden();
+
+		await expect(page.getByTestId("mobile-nav")).toBeHidden();
+
+		await page.getByTestId("mobile-menu-button").click();
+		await expect(page.getByTestId("mobile-nav")).toBeVisible();
+
+		await expect(page.getByTestId("mobile-nav").getByText("Features")).toBeVisible();
+		await expect(page.getByTestId("mobile-nav").getByText("How it works")).toBeVisible();
+		await expect(page.getByTestId("mobile-nav").getByText("FAQ")).toBeVisible();
+		await expect(page.getByTestId("mobile-nav").getByText("GitHub")).toBeVisible();
+		await expect(page.getByTestId("mobile-nav").getByText("Log in")).toBeVisible();
+	});
+
+	test("mobile hero and CTA are visible with no horizontal overflow", async ({ page }) => {
+		await page.goto("/");
+
+		await expect(
+			page.getByRole("heading", {
+				name: /Express controllers\. Inertia pages\. React without the API tax\./i,
+			})
+		).toBeVisible();
+
+		await expect(page.getByRole("link", { name: "Try the sandbox" })).toBeVisible();
+		await expect(page.getByRole("link", { name: "View on GitHub" })).toBeVisible();
+
+		await expect(page.getByTestId("install-card")).toBeVisible();
+
+		const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+		const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+		expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 2);
+	});
+
+	test("mobile sections stack vertically and hide pipeline illustration", async ({ page }) => {
+		await page.goto("/");
+
+		await expect(page.getByTestId("features-section")).toBeVisible();
+		await expect(page.getByTestId("features-section").getByText("Server-rendered React")).toBeVisible();
+
+		await expect(page.getByTestId("how-it-works-section")).toBeVisible();
+		await expect(page.getByTestId("how-it-works-section").getByText("From zero to shipping in three steps.")).toBeVisible();
+
+		await expect(page.getByTestId("how-it-works-pipeline")).toBeHidden();
+
+		await expect(page.getByTestId("workflow-section")).toBeVisible();
+		await expect(page.getByText("Questions you might be asking.")).toBeVisible();
+		await expect(page.getByTestId("bottom-cta-section")).toBeVisible();
+	});
+});
+
+test.describe("Desktop responsive layout", () => {
+	test.use({ viewport: { width: 1280, height: 720 } });
+
+	test("desktop navigation shows full nav and hides hamburger", async ({ page }) => {
+		await page.goto("/");
+		await expect(page).toHaveURL("/");
+
+		await expect(page.getByTestId("desktop-nav")).toBeVisible();
+		await expect(page.getByTestId("mobile-menu-button")).toBeHidden();
+
+		await expect(page.getByTestId("desktop-nav").getByText("Features")).toBeVisible();
+		await expect(page.getByTestId("desktop-nav").getByText("GitHub")).toBeVisible();
+	});
+
+	test("desktop shows pipeline illustration with no overflow", async ({ page }) => {
+		await page.goto("/");
+
+		await expect(page.getByTestId("how-it-works-pipeline")).toBeVisible();
+		await expect(page.getByTestId("hero-architecture-flow")).toBeVisible();
+
+		const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+		const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+		expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 2);
+	});
+});
