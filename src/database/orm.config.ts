@@ -7,7 +7,7 @@ import { env } from "@/config/variables";
 const mikroOrmOptions: Options = {
 	entities: ["dist/database/mappings/*.map.js"],
 	entitiesTs: ["src/database/mappings/*.map.ts"],
-	dbName: env("DB_PATH", "hatch.db") as string,
+	dbName: env("DB_PATH", "theboringarchitecture.db") as string,
 	driver: SqliteDriver,
 	pool: {
 		// this will setup wal mode for sqlite

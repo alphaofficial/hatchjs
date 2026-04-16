@@ -1,4 +1,4 @@
-import { Emitter, HatchEvents } from '@/lib/events';
+import { Emitter, AppEvents } from '@/lib/events';
 
 describe('event bus', () => {
     afterEach(() => {
@@ -6,7 +6,7 @@ describe('event bus', () => {
     });
 
     it('emits and receives user.registered', (done) => {
-        const payload: HatchEvents['user.registered'] = { id: '1', email: 'a@b.com' };
+        const payload: AppEvents['user.registered'] = { id: '1', email: 'a@b.com' };
         Emitter.on('user.registered', (data) => {
             expect(data).toEqual(payload);
             done();
@@ -15,7 +15,7 @@ describe('event bus', () => {
     });
 
     it('emits and receives user.login', (done) => {
-        const payload: HatchEvents['user.login'] = { id: '2', email: 'login@test.com' };
+        const payload: AppEvents['user.login'] = { id: '2', email: 'login@test.com' };
         Emitter.on('user.login', (data) => {
             expect(data).toEqual(payload);
             done();
@@ -24,7 +24,7 @@ describe('event bus', () => {
     });
 
     it('emits and receives user.verified', (done) => {
-        const payload: HatchEvents['user.verified'] = { id: '3', email: 'verify@test.com' };
+        const payload: AppEvents['user.verified'] = { id: '3', email: 'verify@test.com' };
         Emitter.on('user.verified', (data) => {
             expect(data).toEqual(payload);
             done();
@@ -34,7 +34,7 @@ describe('event bus', () => {
 
     it('does not call removed listener', () => {
         const calls: unknown[] = [];
-        const listener = (data: HatchEvents['user.registered']) => calls.push(data);
+        const listener = (data: AppEvents['user.registered']) => calls.push(data);
         Emitter.on('user.registered', listener);
         Emitter.off('user.registered', listener);
         Emitter.emit('user.registered', { id: '1', email: 'a@b.com' });

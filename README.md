@@ -2,7 +2,7 @@
 [![Node Version](https://img.shields.io/badge/node-22%2B-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 
-# Hatch JS
+# The Boring Architecture
 
 A batteries-included fullstack starter built on **Express 5**, **Inertia.js**, **React 19**, **MikroORM**, and **Tailwind CSS**. Server-rendered React without an API layer — pass props from Express controllers straight into React pages.
 
@@ -19,20 +19,20 @@ A batteries-included fullstack starter built on **Express 5**, **Inertia.js**, *
 Interactive scaffold (recommended):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/alphaofficial/theboringarchitecture/main/install.sh | bash
 ```
 
 Non-interactive (defaults, fastest):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash -s -- --quick my-app
+curl -fsSL https://raw.githubusercontent.com/alphaofficial/theboringarchitecture/main/install.sh | bash -s -- --quick my-app
 ```
 
 Flags: `--quick`, `--branch <name>`, `--no-install`, `--no-git`.
 
 ## Architecture
 
-Hatch JS uses [Inertia.js](https://inertiajs.com/) to bridge Express and React — no separate API layer. Every request flows through a single pipeline:
+The Boring Architecture uses [Inertia.js](https://inertiajs.com/) to bridge Express and React — no separate API layer. Every request flows through a single pipeline:
 
 ```
 Browser request
@@ -57,7 +57,7 @@ On the first visit the server returns a full HTML document with the initial page
 - **Queue** — Graphile Worker (`npm run work`), Postgres required; dispatch jobs with `Queue.dispatch('jobName', payload)`
 - **Mailer** — log + SMTP drivers; send mail with `Mailer.send(to, subject, html)`
 - **Task Scheduler** — node-cron (`npm run scheduler`); register recurring tasks with `Scheduler.schedule('0 * * * *', handler)`
-- **Typed Event Bus** — `Emitter.on` / `Emitter.emit` with type-safe `HatchEvents` interface
+- **Typed Event Bus** — `Emitter.on` / `Emitter.emit` with type-safe `AppEvents` interface
 - **In-memory Cache** — `Cache.get / set / delete / flush` with optional TTL
 - **File Storage** — local + S3 drivers; `Storage.put / get / delete / url`; swap drivers via env
 - **Tailwind CSS** + Vite client build
@@ -114,8 +114,8 @@ src/
 | `TRUST_PROXY`               | `loopback`              | Set to your LB CIDR (or `true`) when behind a reverse proxy      |
 | `SESSION_SECRET`            | _(dev only default)_    | **Required in production.** Generate with `openssl rand -hex 32` |
 | `SESSION_MAX_AGE`           | `86400000`              | Session lifetime in ms (24h default)                             |
-| `APP_NAME`                  | `Hatch JS`              | Display name shown in the UI and `<title>`                       |
-| `DB_PATH`                   | `hatch.db`              | SQLite file path                                                 |
+| `APP_NAME`                  | `The Boring Architecture` | Display name shown in the UI and `<title>`                     |
+| `DB_PATH`                   | `theboringarchitecture.db` | SQLite file path                                               |
 | `APP_KEY`                       | _(dev only default)_    | **Required in production.** Used for HMAC token signing. Generate with `openssl rand -hex 32` |
 | `RATE_LIMIT_ENABLED`            | `false`                 | Enable per-IP limiter on `/login` and `/register`                                             |
 | `RATE_LIMIT_AUTH_MAX`           | `5`                     | Max requests per window on auth routes                                                        |
@@ -268,14 +268,14 @@ npm run scheduler
 
 ## Events
 
-A typed in-process event bus backed by Node's `EventEmitter`. Built-in events (`user.registered`, `user.login`, `user.verified`) are defined in `HatchEvents`. Extend the interface to add your own:
+A typed in-process event bus backed by Node's `EventEmitter`. Built-in events (`user.registered`, `user.login`, `user.verified`) are defined in `AppEvents`. Extend the interface to add your own:
 
 ```ts
-import { Emitter, HatchEvents } from './lib/events';
+import { Emitter, AppEvents } from './lib/events';
 
-// Extend HatchEvents for custom typed events
+// Extend AppEvents for custom typed events
 declare module './lib/events' {
-  interface HatchEvents {
+  interface AppEvents {
     'order.placed': { orderId: string; total: number };
   }
 }
@@ -433,7 +433,7 @@ Boot the full Express stack against a real SQLite database. Suites under `test/i
 | `pages.spec.ts` | Public / auth / user pages — rendering, redirects, validation |
 | `hardening.spec.ts` | Helmet headers, rate limiter, body-size limit, XSS guard, error handler |
 | `cache.spec.ts` | `Cache.get / set / delete / flush`, TTL expiry, memory driver |
-| `events.spec.ts` | `Emitter.on / emit / off`, typed events via `HatchEvents` |
+| `events.spec.ts` | `Emitter.on / emit / off`, typed events via `AppEvents` |
 | `mail.spec.ts` | `Mailer.send` with log driver; `MAIL_DRIVER` switching |
 | `queue.spec.ts` | `Queue.dispatch` no-op when `DATABASE_URL` unset, payload shape |
 | `storage.spec.ts` | `Storage.put / get / delete / url / exists`, local and S3 drivers |
@@ -460,10 +460,10 @@ The included `Dockerfile` builds a production image with PM2 as the process mana
 
 ```bash
 # Build the image
-docker build -t hatch-app .
+docker build -t tba-app .
 
 # Run the container
-docker run -d -p 3000:3000 --env-file .env hatch-app
+docker run -d -p 3000:3000 --env-file .env tba-app
 ```
 
 The image installs dependencies, compiles TypeScript, builds the Vite frontend, and starts the app via `pm2-runtime`. Port 3000 is exposed by default.

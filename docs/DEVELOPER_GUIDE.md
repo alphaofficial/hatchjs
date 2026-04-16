@@ -1,6 +1,6 @@
-# Hatch JS — Developer Guide
+# The Boring Architecture — Developer Guide
 
-A practical reference for building features in Hatch JS. Optimized for both humans and LLMs.
+A practical reference for building features in The Boring Architecture. Optimized for both humans and LLMs.
 
 Stack: **Express 5 + Inertia.js 2 + React 19 + MikroORM 6 + TypeScript + Vite + Tailwind**.
 
@@ -345,12 +345,12 @@ Defined and validated by Zod in `src/config/variables.ts`. Boot fails fast on mi
 | --------------------------- | --------------------------- | ---------------------------------------------- |
 | `NODE_ENV`                  | `development`               | `development` \| `production` \| `test`        |
 | `PORT`                      | `3000`                      |                                                |
-| `APP_NAME`                  | `Hatch JS`                  | Shown in nav and `<title>`                     |
+| `APP_NAME`                  | `The Boring Architecture`   | Shown in nav and `<title>`                     |
 | `APP_URL`                   | `http://localhost:3000`     |                                                |
 | `TRUST_PROXY`               | `loopback`                  | Express `trust proxy` setting                  |
 | `SESSION_SECRET`            | _(required in prod)_        | `openssl rand -hex 32`                         |
 | `SESSION_MAX_AGE`           | `86400000`                  | Session lifetime in ms                         |
-| `DB_PATH`                   | `hatch.db`                  | SQLite file path                               |
+| `DB_PATH`                   | `theboringarchitecture.db`  | SQLite file path                               |
 | `RATE_LIMIT_ENABLED`        | `false`                     | Enable auth rate limiter                       |
 | `RATE_LIMIT_AUTH_MAX`       | `5`                         | Max attempts per window                        |
 | `RATE_LIMIT_AUTH_WINDOW_MS` | `60000`                     | Window length in ms                            |
@@ -392,7 +392,7 @@ npm run test:integration
 
 ## 9. Releases & versioning
 
-Hatch JS uses **CalVer** in the form `YYYY.MM.DD` (e.g. `2026.04.07`). When more
+The Boring Architecture uses **CalVer** in the form `YYYY.MM.DD` (e.g. `2026.04.07`). When more
 than one release ships on the same day, a numeric suffix is appended:
 `2026.04.07.1`, `2026.04.07.2`, …
 
@@ -409,10 +409,10 @@ curl -fsSL .../install.sh | bash -s -- --branch main      # bleeding edge
 ```
 
 The cloned project records the version it was scaffolded from in
-`package.json` under the `hatch` field:
+`package.json` under the `tba` field:
 
 ```json
-{ "hatch": { "version": "2026.04.07", "kind": "tag" } }
+{ "tba": { "version": "2026.04.07", "kind": "tag" } }
 ```
 
 ---
@@ -578,7 +578,7 @@ Emitter.on('user.registered', ({ id, email }) => {
 });
 ```
 
-### Built-in events (`HatchEvents`)
+### Built-in events (`AppEvents`)
 
 | Event            | Payload                         | Fired when                          |
 | ---------------- | ------------------------------- | ----------------------------------- |
@@ -588,10 +588,10 @@ Emitter.on('user.registered', ({ id, email }) => {
 
 ### Adding custom events
 
-Extend `HatchEvents` in `src/lib/events.ts`:
+Extend `AppEvents` in `src/lib/events.ts`:
 
 ```ts
-export interface HatchEvents {
+export interface AppEvents {
   'user.registered': { id: string; email: string };
   // add your own:
   'order.placed': { orderId: string; total: number };

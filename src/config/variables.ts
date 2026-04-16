@@ -6,7 +6,7 @@ const DEV_APP_KEY = 'dev_app_key_change_me_in_production_32chars!!';
 const baseSchema = z.object({
 	NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
 	PORT: z.coerce.number().optional().default(3000),
-	APP_NAME: z.string().optional().default('Hatch JS'),
+	APP_NAME: z.string().optional().default('The Boring Architecture'),
 	APP_URL: z.string().optional().default('http://localhost:3000'),
 	TRUST_PROXY: z.string().optional().default('loopback'),
 	APP_KEY: z.string().optional(),

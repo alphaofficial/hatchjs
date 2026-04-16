@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hatch scaffold — generate pages, controllers, routes, jobs, mail templates, and event listeners.
+# The Boring Architecture scaffold — generate pages, controllers, routes, jobs, mail templates, and event listeners.
 #
 # Usage:
 #   scripts/scaffold.sh page <Name> [path] [--model] [--fields "a:type,b:type"]

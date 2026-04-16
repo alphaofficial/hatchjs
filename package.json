@@ -1,7 +1,7 @@
 {
-  "name": "hatch",
+  "name": "theboringarchitecture",
   "version": "0.1.0",
-  "description": "Hatch JS — a fullstack starter for Express, Inertia, and React.",
+  "description": "The Boring Architecture — a fullstack starter for Express, Inertia, and React.",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently --names \"pages,server,client\" --prefix-colors \"yellow,cyan,magenta\" \"npm run pages:watch\" \"npm run dev:server\" \"npm run dev:client\"",
