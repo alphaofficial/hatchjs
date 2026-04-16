@@ -25,7 +25,7 @@ export default route;
 `;
 
 function sandbox(): string {
-	const dir = mkdtempSync(join(tmpdir(), "hatch-scaffold-"));
+	const dir = mkdtempSync(join(tmpdir(), "tba-scaffold-"));
 	mkdirSync(join(dir, "scripts"), { recursive: true });
 	mkdirSync(join(dir, "src", "controllers"), { recursive: true });
 	mkdirSync(join(dir, "src", "routes"), { recursive: true });

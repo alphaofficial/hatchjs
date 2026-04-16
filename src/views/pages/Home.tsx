@@ -8,7 +8,7 @@ interface Props {
 }
 
 const INSTALL_CMD =
-	'curl -fsSL https://raw.githubusercontent.com/alphaofficial/hatchjs/main/install.sh | bash';
+	'curl -fsSL https://raw.githubusercontent.com/alphaofficial/theboringarchitecture/main/install.sh | bash';
 
 function CopyButton({ text }: { text: string }) {
 	const [copied, setCopied] = useState(false);
@@ -67,12 +67,12 @@ export default function Home(pageProps: Props) {
 	return (
 		<>
 			<Head>
-				<title>Hatch JS — A fullstack starter for Express, Inertia &amp; React</title>
+				<title>The Boring Architecture — A fullstack starter for Express, Inertia &amp; React</title>
 				<meta
 					name="description"
-					content="Hatch JS compresses the complexity of modern web apps. Server-rendered React on top of Express — no API layer, no glue code, no overthinking."
+					content="The Boring Architecture compresses the complexity of modern web apps. Server-rendered React on top of Express — no API layer, no glue code, no overthinking."
 				/>
-				<meta property="og:title" content="Hatch JS — A fullstack starter for Express, Inertia & React" />
+				<meta property="og:title" content="The Boring Architecture — A fullstack starter for Express, Inertia & React" />
 				<meta
 					property="og:description"
 					content="Server-rendered React on top of Express. Auth, sessions, ORM, migrations and SSR included."
@@ -86,7 +86,7 @@ export default function Home(pageProps: Props) {
 					<div className="mx-auto max-w-6xl px-6 py-5 flex items-center justify-between">
 						<Link href="/" className="flex items-center gap-x-2">
 							<span className="inline-flex h-7 w-7 items-center justify-center rounded-sm bg-gray-900 text-white text-xs font-bold">
-								H
+								T
 							</span>
 							<span className="text-lg font-bold tracking-tight">{applicationName}</span>
 						</Link>
@@ -95,7 +95,7 @@ export default function Home(pageProps: Props) {
 							<a href="#how" className="hover:text-gray-900">How it works</a>
 							<a href="#faq" className="hover:text-gray-900">FAQ</a>
 							<a
-								href="https://github.com/alphaofficial/hatchjs"
+								href="https://github.com/alphaofficial/theboringarchitecture"
 								className="hover:text-gray-900"
 							>
 								GitHub
@@ -122,7 +122,7 @@ export default function Home(pageProps: Props) {
 							of modern web apps.
 						</h1>
 						<p className="mx-auto mt-8 max-w-2xl text-xl leading-8 text-gray-600">
-							Hatch JS is a server-rendered React stack on top of Express. No API layer.
+							The Boring Architecture is a server-rendered React stack on top of Express. No API layer.
 							No fetch glue. No meta-framework. Write controllers, render pages, ship.
 						</p>
 
@@ -143,7 +143,7 @@ export default function Home(pageProps: Props) {
 								</Link>
 							)}
 							<a
-								href="https://github.com/alphaofficial/hatchjs"
+								href="https://github.com/alphaofficial/theboringarchitecture"
 								className="inline-flex items-center justify-center rounded-sm border border-gray-900 px-5 py-3 text-sm font-bold uppercase tracking-wider text-gray-900 hover:bg-gray-900 hover:text-white"
 							>
 								View on GitHub
@@ -342,13 +342,13 @@ export default function Home(pageProps: Props) {
 						</p>
 						<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
 							<a
-								href="https://github.com/alphaofficial/hatchjs"
+								href="https://github.com/alphaofficial/theboringarchitecture"
 								className="inline-flex items-center justify-center rounded-sm bg-white px-5 py-3 text-sm font-bold uppercase tracking-wider text-gray-900 hover:bg-gray-100"
 							>
 								Star on GitHub
 							</a>
 							<a
-								href="https://github.com/alphaofficial/hatchjs#readme"
+								href="https://github.com/alphaofficial/theboringarchitecture#readme"
 								className="inline-flex items-center justify-center rounded-sm border border-white px-5 py-3 text-sm font-bold uppercase tracking-wider text-white hover:bg-white hover:text-gray-900"
 							>
 								Read the docs →
@@ -364,17 +364,17 @@ export default function Home(pageProps: Props) {
 						</p>
 						<ul className="flex items-center gap-x-6 text-xs text-gray-500">
 							<li>
-								<a href="https://github.com/alphaofficial/hatchjs" className="hover:text-gray-900">
+								<a href="https://github.com/alphaofficial/theboringarchitecture" className="hover:text-gray-900">
 									GitHub
 								</a>
 							</li>
 							<li>
-								<a href="https://github.com/alphaofficial/hatchjs#readme" className="hover:text-gray-900">
+								<a href="https://github.com/alphaofficial/theboringarchitecture#readme" className="hover:text-gray-900">
 									Docs
 								</a>
 							</li>
 							<li>
-								<a href="https://github.com/alphaofficial/hatchjs/issues" className="hover:text-gray-900">
+								<a href="https://github.com/alphaofficial/theboringarchitecture/issues" className="hover:text-gray-900">
 									Issues
 								</a>
 							</li>
@@ -420,7 +420,7 @@ const FEATURES = [
 	{
 		title: 'Typed Event Bus',
 		description:
-			'In-process events with Emitter.on() / Emitter.emit(). Extend HatchEvents for fully type-safe custom events.',
+			'In-process events with Emitter.on() / Emitter.emit(). Extend AppEvents for fully type-safe custom events.',
 	},
 	{
 		title: 'Cache',
@@ -485,7 +485,7 @@ const STEPS = [
 const FAQS = [
 	{
 		q: 'Why not Next.js?',
-		a: 'Next is great when you want a meta-framework. Hatch JS is for teams who already know Express, want full control of the request lifecycle, and would rather render React from a controller than learn another router.',
+		a: 'Next is great when you want a meta-framework. The Boring Architecture is for teams who already know Express, want full control of the request lifecycle, and would rather render React from a controller than learn another router.',
 	},
 	{
 		q: 'Can I use Postgres?',
