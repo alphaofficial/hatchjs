@@ -34,8 +34,8 @@ test.describe("Landing page", () => {
 			)
 		).toBeVisible();
 
-		await page.getByRole("button", { name: "Copy install command" }).click();
-		await expect(page.getByRole("button", { name: "Copy install command" })).toContainText("Copied");
+		await installCard.getByRole("button", { name: "Copy install command" }).click();
+		await expect(installCard.getByRole("button", { name: "Copy install command" })).toContainText("Copied");
 
 		const featuresSection = page.getByTestId("features-section");
 		await expect(featuresSection).toBeVisible();
