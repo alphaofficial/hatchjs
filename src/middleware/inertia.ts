@@ -1,27 +1,7 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { InertiaExpressAdapter } from '../adapters/InertiaExpressAdapter';
+import { renderInertiaHtml } from '../views/renderInertiaHtml';
 import variables from '../config/variables';
-import * as fs from 'fs';
-import * as path from 'path';
-
-const templatePath = path.join(process.cwd(), 'public', 'template.html');
-
-const HTML_ESCAPES: Record<string, string> = {
-	'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-};
-
-function escapeHtml(value: string): string {
-	return value.replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
-}
-
-function renderToHtml(result: any, title?: string, head?: string): string {
-	const template = fs.readFileSync(templatePath, 'utf-8');
-	return template
-		.replace('{{TITLE}}', escapeHtml(title || variables.APP_NAME))
-		.replace('{{HEAD}}', head || '')
-		.replace('{{PAGE_DATA}}', escapeHtml(JSON.stringify(result)))
-		.replace('{{CLIENT_ENTRY}}', '/app.js');
-}
 
 declare module 'express-serve-static-core' {
 	interface Request {
@@ -46,11 +26,13 @@ export class InertiaExpressMiddleware {
 
 		// Override res.render so controllers can call res.render('Page', props)
 		res.render = ((view: string, props: Record<string, any> = {}) => {
-			const result = inertia.render(req, res, view, props);
+			const page = inertia.render(req, res, view, props);
 
-			if (!res.headersSent) {
-				res.send(renderToHtml(result, props._title, props._head));
-			}
+			if (res.headersSent) return;
+
+			renderInertiaHtml(page, props._title, props._head)
+				.then(html => res.send(html))
+				.catch(next);
 		}) as any;
 
 		next();
