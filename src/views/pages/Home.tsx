@@ -316,17 +316,6 @@ export default function Home(pageProps: Props) {
 									<div>
 										<h3 className="text-xl font-bold text-slate-900">{step.title}</h3>
 										<p className="mt-2 text-base leading-7 text-slate-700">{step.description}</p>
-										{step.code && (
-											<div className="mt-4 flex items-center gap-3 overflow-hidden rounded-xl bg-slate-950">
-												<div className="min-w-0 flex-1 overflow-x-auto p-4 font-mono text-sm leading-7 text-slate-100">
-													<span className="select-none text-rose-400">$ </span>
-													<span>{step.code}</span>
-												</div>
-												<div className="shrink-0 pr-4">
-													<CopyButton text={step.code} />
-												</div>
-											</div>
-										)}
 									</div>
 								</div>
 							))}
