@@ -1,7 +1,7 @@
 import { Migration } from '@mikro-orm/migrations';
 
 /**
- * Rebuild the sessions table for split-token authentication (Lucia-style).
+ * Rebuild the sessions table for split-token authentication.
  *
  * Token format: `<id>.<secret>`. The DB row is keyed by the plaintext id,
  * stores the SHA-256 hash of the secret, and records the original creation

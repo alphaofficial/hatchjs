@@ -4,7 +4,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import { Session } from '@/models/Session';
 import variables from '../config/variables';
 
-// Lucia's 32-char alphabet (base32 without visually ambiguous chars).
+// 32-character alphabet (base32 without visually ambiguous characters).
 const TOKEN_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789';
 
 // Generates a 24-char token segment (~120 bits entropy) using cryptographically
