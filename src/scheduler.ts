@@ -12,7 +12,7 @@ async function cleanExpiredSessions(orm: MikroORM): Promise<void> {
     const em = orm.em.fork();
     const deleted = await em.nativeDelete(Session, { last_activity: { $lte: cutoff } });
     if (deleted > 0) {
-        PinoLogger.info('scheduler', `Cleaned ${deleted} expired session(s)`);
+        PinoLogger.info({ scope: 'scheduler', message: `Cleaned ${deleted} expired session(s)` });
     }
 }
 
@@ -23,12 +23,14 @@ async function main() {
     Scheduler.schedule('0 * * * *', () => cleanExpiredSessions(orm));
 
     const registered = Scheduler.getRegisteredTasks();
-    PinoLogger.info('scheduler', `Scheduler started with ${registered.length} task(s)`, {
-        tasks: registered.map(t => t.expression),
+    PinoLogger.info({
+        scope: 'scheduler',
+        message: `Scheduler started with ${registered.length} task(s)`,
+        params: { tasks: registered.map(t => t.expression) },
     });
 
     const shutdown = async () => {
-        PinoLogger.info('scheduler', 'Shutting down scheduler...');
+        PinoLogger.info({ scope: 'scheduler', message: 'Shutting down scheduler...' });
         await orm.close(true);
         process.exit(0);
     };
@@ -38,6 +40,6 @@ async function main() {
 }
 
 main().catch(err => {
-    PinoLogger.error('scheduler', 'Scheduler failed to start', { error: err });
+    PinoLogger.error({ scope: 'scheduler', message: 'Scheduler failed to start', params: { error: err } });
     process.exit(1);
 });

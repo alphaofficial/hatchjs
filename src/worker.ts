@@ -6,7 +6,7 @@ import { PinoLogger } from './logger/pinoLogger';
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-	PinoLogger.error('worker', 'DATABASE_URL is not set. Worker requires a PostgreSQL connection.');
+	PinoLogger.error({ scope: 'worker', message: 'DATABASE_URL is not set. Worker requires a PostgreSQL connection.' });
 	process.exit(1);
 }
 
@@ -14,13 +14,13 @@ const taskList = {
 	sendWelcomeEmail,
 };
 
-PinoLogger.info('worker', 'Starting Graphile Worker...');
+PinoLogger.info({ scope: 'worker', message: 'Starting Graphile Worker...' });
 
 Queue.start(connectionString, taskList)
 	.then(runner => {
-		PinoLogger.info('worker', 'Worker started and listening for jobs.');
+		PinoLogger.info({ scope: 'worker', message: 'Worker started and listening for jobs.' });
 		const shutdown = async () => {
-			PinoLogger.info('worker', 'Shutting down worker...');
+			PinoLogger.info({ scope: 'worker', message: 'Shutting down worker...' });
 			await runner.stop();
 			process.exit(0);
 		};
@@ -28,6 +28,6 @@ Queue.start(connectionString, taskList)
 		process.on('SIGINT', shutdown);
 	})
 	.catch(err => {
-		PinoLogger.error('worker', 'Worker failed to start', { error: err });
+		PinoLogger.error({ scope: 'worker', message: 'Worker failed to start', params: { error: err } });
 		process.exit(1);
 	});

@@ -14,7 +14,11 @@ export interface MailTransport {
 
 class LogTransport implements MailTransport {
     async sendMail(message: MailMessage): Promise<void> {
-        PinoLogger.info('mail', `[LOG DRIVER] To: ${message.to} | Subject: ${message.subject}`, { html: message.html });
+        PinoLogger.info({
+            scope: 'mail',
+            message: `[LOG DRIVER] To: ${message.to} | Subject: ${message.subject}`,
+            params: { html: message.html },
+        });
     }
 }
 

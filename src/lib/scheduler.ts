@@ -20,7 +20,7 @@ export class Scheduler {
             try {
                 await handler();
             } catch (err) {
-                PinoLogger.error('scheduler', `Task failed (${expression})`, { error: err });
+                PinoLogger.error({ scope: 'scheduler', message: `Task failed (${expression})`, params: { error: err } });
             }
         });
 

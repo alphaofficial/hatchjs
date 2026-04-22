@@ -122,17 +122,17 @@ async function bootstrap() {
   app.use(globalErrorHandler);
 
   const server = app.listen(port, () => {
-    PinoLogger.info('App', `Server running at http://localhost:${port}`);
+    PinoLogger.info({ scope: 'App', message: `Server running at http://localhost:${port}` });
   });
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
-    PinoLogger.info('App', `Received ${signal}, shutting down...`);
+    PinoLogger.info({ scope: 'App', message: `Received ${signal}, shutting down...` });
     server.close(async () => {
       try {
         await orm.close(true);
       } catch (err: any) {
-        PinoLogger.error('App', 'Error closing ORM', { message: err?.message });
+        PinoLogger.error({ scope: 'App', message: 'Error closing ORM', params: { message: err?.message } });
       }
       process.exit(0);
     });
@@ -145,7 +145,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch(err => {
-  PinoLogger.error('App', "Failed to start server", err);
+  PinoLogger.error({ scope: 'App', message: 'Failed to start server', params: { error: err } });
   process.exit(1);
 });
 

@@ -7,5 +7,9 @@ interface SendWelcomeEmailPayload {
 
 export async function sendWelcomeEmail(payload: unknown): Promise<void> {
 	const { to, name } = payload as SendWelcomeEmailPayload;
-	PinoLogger.info('job:sendWelcomeEmail', `Sending welcome email to ${to}`, { to, name });
+	PinoLogger.info({
+		scope: 'job:sendWelcomeEmail',
+		message: `Sending welcome email to ${to}`,
+		params: { to, name },
+	});
 }

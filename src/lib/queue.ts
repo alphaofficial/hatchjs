@@ -19,7 +19,7 @@ export class Queue {
     static async dispatch(jobName: string, payload: unknown = {}): Promise<void> {
         const connectionString = variables.DATABASE_URL;
         if (!connectionString) {
-            PinoLogger.warn('queue', `DATABASE_URL not set — job dispatch is a no-op`, { jobName });
+            PinoLogger.warn({ scope: 'queue', message: 'DATABASE_URL not set — job dispatch is a no-op', params: { jobName } });
             return;
         }
         await quickAddJob({ connectionString }, jobName, payload);

@@ -64,74 +64,64 @@ if (isDev) {
 
 const pinoInstance = pino(coreConfig);
 
+export interface LogOptions {
+	scope: string;
+	message: string;
+	params?: Record<string, unknown>;
+	tags?: readonly string[] | string;
+}
+
 export class PinoLogger {
 	public static instance = pinoInstance;
 
-	public static critical(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
+	public static critical(options: LogOptions): void {
 		// @ts-expect-error Critical logging exists
 		PinoLogger.instance.logger.critical(
-			{ ...logParams, tags },
-			`[${scope}] ${message}`,
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
 		);
 	}
 
-	public static fatal(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
-		PinoLogger.instance.logger.fatal({ ...logParams, tags }, `[${scope}] ${message}`);
+	public static fatal(options: LogOptions): void {
+		PinoLogger.instance.logger.fatal(
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
+		);
 	}
 
-	public static error(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
-		PinoLogger.instance.logger.error({ ...logParams, tags }, `[${scope}] ${message}`);
+	public static error(options: LogOptions): void {
+		PinoLogger.instance.logger.error(
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
+		);
 	}
 
-	public static warn(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
-		PinoLogger.instance.logger.warn({ ...logParams, tags }, `[${scope}] ${message}`);
+	public static warn(options: LogOptions): void {
+		PinoLogger.instance.logger.warn(
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
+		);
 	}
 
-	public static info(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
-		PinoLogger.instance.logger.info({ ...logParams, tags }, `[${scope}] ${message}`);
+	public static info(options: LogOptions): void {
+		PinoLogger.instance.logger.info(
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
+		);
 	}
 
-	public static debug(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
-		PinoLogger.instance.logger.debug({ ...logParams, tags }, `[${scope}] ${message}`);
+	public static debug(options: LogOptions): void {
+		PinoLogger.instance.logger.debug(
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
+		);
 	}
 
-	public static trace(
-		scope: string,
-		message: string,
-		logParams?: Record<string, unknown>,
-		tags?: readonly string[] | string,
-	): void {
-		PinoLogger.instance.logger.trace({ ...logParams, tags }, `[${scope}] ${message}`);
+	public static trace(options: LogOptions): void {
+		PinoLogger.instance.logger.trace(
+			{ ...options.params, tags: options.tags },
+			`[${options.scope}] ${options.message}`,
+		);
 	}
 }
 

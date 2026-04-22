@@ -26,9 +26,13 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req: Request, res: 
 	const status = (err && (err.status || err.statusCode)) || 500;
 	const isProd = variables.NODE_ENV === 'production';
 
-	PinoLogger.error('HTTP', `Unhandled error on ${req.method} ${req.originalUrl}`, {
-		message: err?.message,
-		stack: err?.stack,
+	PinoLogger.error({
+		scope: 'HTTP',
+		message: `Unhandled error on ${req.method} ${req.originalUrl}`,
+		params: {
+			message: err?.message,
+			stack: err?.stack,
+		},
 	});
 
 	if (res.headersSent) return;
