@@ -1,5 +1,5 @@
 import { EntitySchema } from "@mikro-orm/postgresql";
-import { User } from "@/models/User";
+import { User } from "@/core/models/User";
 
 export const UserMapper = new EntitySchema<User>({
 	class: User,

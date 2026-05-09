@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { Hash } from '../utils/Hash';
-import { User } from '../models/User';
+import { User } from '@/core/models/User';
 import { PasswordReset } from '../models/PasswordReset';
 import { Session } from '../models/Session';
 import { Mailer } from '../lib/mail';

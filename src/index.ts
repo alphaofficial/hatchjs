@@ -9,7 +9,7 @@ import ormConfig from './database/orm.config';
 import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { PinoLogger } from './logger/pinoLogger';
 import variables from './config/variables';
-import { User } from './models/User';
+import { User } from '@/core/models/User';
 import { SessionStore, generateSessionToken } from './middleware/sessionStore';
 import { verifyOrigin } from './middleware/csrf';
 import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';

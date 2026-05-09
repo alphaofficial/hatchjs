@@ -1,7 +1,7 @@
 import supertest from "supertest";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
-import { User } from "../../../src/models/User";
+import { User } from "../../../src/core/models/User";
 
 describe("Pages Integration Tests", () => {
 	let app: any;

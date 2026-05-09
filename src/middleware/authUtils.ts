@@ -1,5 +1,5 @@
 import { Request, NextFunction } from 'express';
-import { User } from '../models/User';
+import { User } from '@/core/models/User';
 
 export function injectAuthHelpers(req: Request, _: any, next: NextFunction) {
     req.user_id = (): string | null => {

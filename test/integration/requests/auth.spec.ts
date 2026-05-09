@@ -2,7 +2,7 @@ import supertest from "supertest";
 import crypto from "crypto";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
-import { User } from "../../../src/models/User";
+import { User } from "../../../src/core/models/User";
 import { PasswordReset } from "../../../src/models/PasswordReset";
 import variables from "../../../src/config/variables";
 

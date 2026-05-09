@@ -1,5 +1,5 @@
 import { MikroORM } from "@mikro-orm/core";
-import { User } from "../../src/models/User";
+import { User } from "../../src/core/models/User";
 import { Session } from "../../src/models/Session";
 import { Hash } from "../../src/utils/Hash";
 
