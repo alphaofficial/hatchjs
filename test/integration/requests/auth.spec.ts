@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
 import { User } from "../../../src/core/models/User";
-import { PasswordReset } from "../../../src/models/PasswordReset";
+import { PasswordReset } from "../../../src/core/models/PasswordReset";
 import variables from "../../../src/config/variables";
 
 function extractInertiaPageData(html: string): any {

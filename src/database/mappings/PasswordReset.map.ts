@@ -1,5 +1,5 @@
 import { EntitySchema } from "@mikro-orm/postgresql";
-import { PasswordReset } from "@/models/PasswordReset";
+import { PasswordReset } from "@/core/models/PasswordReset";
 
 export const PasswordResetMapper = new EntitySchema<PasswordReset>({
 	class: PasswordReset,

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { Hash } from '../utils/Hash';
 import { User } from '@/core/models/User';
-import { PasswordReset } from '../models/PasswordReset';
+import { PasswordReset } from '@/core/models/PasswordReset';
 import { Session } from '@/core/models/Session';
 import { Mailer } from '../lib/mail';
 import { Emitter } from '../lib/events';
