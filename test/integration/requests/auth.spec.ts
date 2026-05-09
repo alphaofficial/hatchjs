@@ -59,6 +59,123 @@ describe("Auth Flows Integration Tests", () => {
 		await database?.close(true);
 	});
 
+	// ─── Register ───────────────────────────────────────────────────────────────
+
+	describe("Register", () => {
+		describe("GET /register", () => {
+			it("renders the register page", async () => {
+				const response = await supertest(app).get("/register");
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Register");
+			});
+		});
+
+		describe("POST /register", () => {
+			it("creates a user, persists a hashed password, and redirects to /verify-email", async () => {
+				const response = await supertest(app)
+					.post("/register")
+					.send({
+						name: "New User",
+						email: "newuser@example.com",
+						password: "password123",
+						password_confirmation: "password123",
+					});
+
+				expect(response.status).toBe(302);
+				expect(response.headers.location).toBe("/verify-email");
+
+				const em = database.em.fork();
+				const created = await em.findOne(User, { email: "newuser@example.com" });
+				expect(created).not.toBeNull();
+				expect(created?.name).toBe("New User");
+				expect(created?.password).not.toBe("password123");
+				expect(created?.emailVerifiedAt ?? null).toBeNull();
+			});
+
+			it("rejects registration when the email is already taken", async () => {
+				await testDataFactory.createUser({ email: "taken@example.com" });
+
+				const response = await supertest(app)
+					.post("/register")
+					.send({
+						name: "Another",
+						email: "taken@example.com",
+						password: "password123",
+						password_confirmation: "password123",
+					});
+
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Register");
+				expect(pageData.props.errors.email).toBeDefined();
+			});
+
+			it("returns a validation error when passwords do not match", async () => {
+				const response = await supertest(app)
+					.post("/register")
+					.send({
+						name: "Mismatch",
+						email: "mismatch@example.com",
+						password: "password123",
+						password_confirmation: "different123",
+					});
+
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Register");
+				expect(pageData.props.errors.password_confirmation).toBeDefined();
+			});
+		});
+	});
+
+	// ─── Login ──────────────────────────────────────────────────────────────────
+
+	describe("Login", () => {
+		describe("GET /login", () => {
+			it("renders the login page", async () => {
+				const response = await supertest(app).get("/login");
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Login");
+			});
+
+			it("includes a reset status when ?reset=1 is present", async () => {
+				const response = await supertest(app).get("/login?reset=1");
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Login");
+				expect(pageData.props.status).toMatch(/reset/i);
+			});
+		});
+
+		describe("POST /login", () => {
+			it("authenticates a valid user and redirects to /home", async () => {
+				const user = await testDataFactory.createUser({ email: "loginok@example.com" });
+
+				const response = await supertest(app)
+					.post("/login")
+					.send({ email: user.email, password: "password123" });
+
+				expect(response.status).toBe(302);
+				expect(response.headers.location).toBe("/home");
+			});
+
+			it("returns an invalid credentials error for the wrong password", async () => {
+				const user = await testDataFactory.createUser({ email: "wrongpw@example.com" });
+
+				const response = await supertest(app)
+					.post("/login")
+					.send({ email: user.email, password: "not-the-password" });
+
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Login");
+				expect(pageData.props.errors.email).toBe("Invalid credentials");
+			});
+		});
+	});
+
 	// ─── Forgot Password ────────────────────────────────────────────────────────
 
 	describe("Forgot Password", () => {
