@@ -6,43 +6,7 @@ import { RegisterUser } from '@/core/use-cases/RegisterUser';
 import { ResendVerification } from '@/core/use-cases/ResendVerification';
 import { ResetPassword } from '@/core/use-cases/ResetPassword';
 import { VerifyEmail } from '@/core/use-cases/VerifyEmail';
-import { Emitter } from '@/adapters/shared/events';
-import { sendConfiguredMail } from '@/adapters/outbound/mail/configuredTransport';
 import { z } from 'zod';
-import crypto from 'crypto';
-import variables from '@/config/variables';
-import type { MailTransport } from '@/ports/mail';
-import type { UserRepository } from '@/ports/user-repository';
-
-// ---- email-verification token helpers ----
-
-function makeVerificationToken(userId: string, email: string): string {
-    const payload = Buffer.from(JSON.stringify({ id: userId, email, iat: Date.now() })).toString('base64url');
-    const sig = crypto.createHmac('sha256', variables.APP_KEY).update(payload).digest('hex');
-    return `${payload}.${sig}`;
-}
-
-interface VerificationPayload {
-    id: string;
-    email: string;
-    iat: number;
-}
-
-function verifyVerificationToken(token: string): VerificationPayload | null {
-    const dot = token.lastIndexOf('.');
-    if (dot < 0) return null;
-    const payload = token.slice(0, dot);
-    const sig = token.slice(dot + 1);
-    const expected = crypto.createHmac('sha256', variables.APP_KEY).update(payload).digest('hex');
-    const sigBuf = Buffer.from(sig, 'hex');
-    const expBuf = Buffer.from(expected, 'hex');
-    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) return null;
-    try {
-        return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as VerificationPayload;
-    } catch {
-        return null;
-    }
-}
 
 const loginSchema = z.object({
     email: z.email(),
@@ -73,31 +37,72 @@ const resetPasswordSchema = z.object({
     path: ["password_confirmation"]
 });
 
-export class AuthController extends BaseController {
+interface VerificationPayload {
+    id: string;
+    email: string;
+}
 
-    static async showLogin(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
+type VerificationTokenResult =
+    | { status: 'invalid' }
+    | { status: 'expired' }
+    | { status: 'valid'; payload: VerificationPayload };
+
+interface AuthControllerDependencies {
+    loginUser: LoginUser;
+    registerUser: RegisterUser;
+    forgotPassword: ForgotPassword;
+    resetPassword: ResetPassword;
+    verifyEmail: VerifyEmail;
+    resendVerification: ResendVerification;
+    readVerificationToken: (token: string) => VerificationTokenResult;
+}
+
+export class AuthController {
+    constructor(
+        private readonly loginUserUseCase: LoginUser,
+        private readonly registerUserUseCase: RegisterUser,
+        private readonly forgotPasswordUseCase: ForgotPassword,
+        private readonly resetPasswordUseCase: ResetPassword,
+        private readonly verifyEmailUseCase: VerifyEmail,
+        private readonly resendVerificationUseCase: ResendVerification,
+        private readonly readVerificationToken: AuthControllerDependencies['readVerificationToken'],
+    ) {}
+
+    static fromDependencies(dependencies: AuthControllerDependencies): AuthController {
+        return new AuthController(
+            dependencies.loginUser,
+            dependencies.registerUser,
+            dependencies.forgotPassword,
+            dependencies.resetPassword,
+            dependencies.verifyEmail,
+            dependencies.resendVerification,
+            dependencies.readVerificationToken,
+        );
+    }
+
+    private render(
+        req: Request,
+        res: Response,
+        componentName: Parameters<BaseController['render']>[0],
+        componentProps: Parameters<BaseController['render']>[1] = {},
+    ) {
+        return new BaseController(req, res).render(componentName, componentProps);
+    }
+
+    showLogin = async (req: Request, res: Response) => {
         const status = req.query.reset === '1' ? 'Your password has been reset. You may now sign in.' : undefined;
-        return controller.render('Auth/Login', { status });
-    }
+        return this.render(req, res, 'Auth/Login', { status });
+    };
 
-    static async showRegister(req: Request, res: Response) {
-        return new AuthController(req, res).render('Auth/Register');
-    }
+    showRegister = async (req: Request, res: Response) => this.render(req, res, 'Auth/Register');
 
-    static async login(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
-
+    login = async (req: Request, res: Response) => {
         try {
             const validatedData = loginSchema.parse(req.body);
-            const loginUser = new LoginUser({
-                users: createUserRepository(req.orm.em),
-                emit: Emitter.emit.bind(Emitter),
-            });
-            const result = await loginUser.execute(validatedData);
+            const result = await this.loginUserUseCase.execute(validatedData);
 
             if (result.status === 'invalid_credentials') {
-                return controller.render('Auth/Login', {
+                return this.render(req, res, 'Auth/Login', {
                     errors: { email: 'Invalid credentials' }
                 });
             }
@@ -107,37 +112,25 @@ export class AuthController extends BaseController {
 
         } catch (error) {
             if (error instanceof z.ZodError) {
-                return controller.render('Auth/Login', {
+                return this.render(req, res, 'Auth/Login', {
                     errors: error.flatten().fieldErrors
                 });
             }
             throw error;
         }
-    }
+    };
 
-    static async register(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
-
+    register = async (req: Request, res: Response) => {
         try {
             const validatedData = registerSchema.parse(req.body);
-            const registerUser = new RegisterUser({
-                users: createUserRepository(req.orm.em),
-                mailTransport: createMailTransport(),
-                emit: Emitter.emit.bind(Emitter),
-                appName: variables.APP_NAME,
-                appUrl: variables.APP_URL,
-                uuid: crypto.randomUUID,
-                makeVerificationToken: user => makeVerificationToken(user.id, user.email),
-            });
-
-            const result = await registerUser.execute({
+            const result = await this.registerUserUseCase.execute({
                 name: validatedData.name,
                 email: validatedData.email,
                 password: validatedData.password,
             });
 
             if (result.status === 'email_taken') {
-                return controller.render('Auth/Register', {
+                return this.render(req, res, 'Auth/Register', {
                     errors: { email: 'Email already taken' }
                 });
             }
@@ -147,15 +140,15 @@ export class AuthController extends BaseController {
 
         } catch (error) {
             if (error instanceof z.ZodError) {
-                return controller.render('Auth/Register', {
+                return this.render(req, res, 'Auth/Register', {
                     errors: error.flatten().fieldErrors
                 });
             }
             throw error;
         }
-    }
+    };
 
-    static async logout(req: Request, res: Response) {
+    logout = async (req: Request, res: Response) => {
         try {
             await req.logout();
             res.redirect('/login');
@@ -163,67 +156,44 @@ export class AuthController extends BaseController {
             console.error('Session destruction error:', err);
             res.redirect('/login');
         }
-    }
+    };
 
-    static async dashboard(req: Request, res: Response) {
+    dashboard = async (req: Request, res: Response) => {
         const user = await req.user();
-        return new AuthController(req, res).render('Dashboard', { user });
-    }
+        return this.render(req, res, 'Dashboard', { user });
+    };
 
-    static async showForgotPassword(req: Request, res: Response) {
-        return new AuthController(req, res).render('Auth/ForgotPassword');
-    }
+    showForgotPassword = async (req: Request, res: Response) => this.render(req, res, 'Auth/ForgotPassword');
 
-    static async forgotPassword(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
-
+    forgotPassword = async (req: Request, res: Response) => {
         try {
             const { email } = forgotPasswordSchema.parse(req.body);
-            const forgotPassword = new ForgotPassword({
-                users: createUserRepository(req.entityManager),
-                mailTransport: createMailTransport(),
-                appUrl: variables.APP_URL,
-                passwordResetExpiryMinutes: variables.PASSWORD_RESET_EXPIRY,
-                createResetToken: () => {
-                    const rawToken = crypto.randomBytes(32).toString('hex');
-                    const tokenHash = crypto
-                        .createHmac('sha256', variables.APP_KEY)
-                        .update(rawToken)
-                        .digest('hex');
+            await this.forgotPasswordUseCase.execute({ email });
 
-                    return { rawToken, tokenHash };
-                },
-                now: () => new Date(),
-            });
-
-            await forgotPassword.execute({ email });
-
-            return controller.render('Auth/ForgotPassword', {
+            return this.render(req, res, 'Auth/ForgotPassword', {
                 status: 'We have emailed your password reset link!'
             });
 
         } catch (error) {
             if (error instanceof z.ZodError) {
-                return controller.render('Auth/ForgotPassword', {
+                return this.render(req, res, 'Auth/ForgotPassword', {
                     errors: error.flatten().fieldErrors
                 });
             }
             throw error;
         }
-    }
+    };
 
-    static async showResetPassword(req: Request, res: Response) {
-        return new AuthController(req, res).render('Auth/ResetPassword', {
+    showResetPassword = async (req: Request, res: Response) => {
+        return this.render(req, res, 'Auth/ResetPassword', {
             token: req.params.token,
             email: req.query.email as string ?? ''
         });
-    }
+    };
 
-    static async resetPassword(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
-
+    resetPassword = async (req: Request, res: Response) => {
         const renderError = (errors: Record<string, string[]>) =>
-            controller.render('Auth/ResetPassword', {
+            this.render(req, res, 'Auth/ResetPassword', {
                 token: req.body.token ?? '',
                 email: req.body.email ?? '',
                 errors
@@ -231,17 +201,7 @@ export class AuthController extends BaseController {
 
         try {
             const validated = resetPasswordSchema.parse(req.body);
-            const resetPassword = new ResetPassword({
-                users: createUserRepository(req.entityManager),
-                passwordResetExpiryMinutes: variables.PASSWORD_RESET_EXPIRY,
-                makeTokenHash: token => crypto
-                    .createHmac('sha256', variables.APP_KEY)
-                    .update(token)
-                    .digest('hex'),
-                now: () => new Date(),
-            });
-
-            const result = await resetPassword.execute(validated);
+            const result = await this.resetPasswordUseCase.execute(validated);
 
             if (result.status === 'invalid_token') {
                 return renderError({ token: ['This password reset link is invalid.'] });
@@ -259,96 +219,63 @@ export class AuthController extends BaseController {
             }
             throw error;
         }
-    }
+    };
 
-    static async showVerifyEmail(req: Request, res: Response) {
+    showVerifyEmail = async (req: Request, res: Response) => {
         const user = await req.user();
-        return new AuthController(req, res).render('Auth/VerifyEmail', { email: user?.email });
-    }
+        return this.render(req, res, 'Auth/VerifyEmail', { email: user?.email });
+    };
 
-    static async verifyEmail(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
-        const { token } = req.params;
-        const payload = verifyVerificationToken(token);
+    verifyEmail = async (req: Request, res: Response) => {
+        const { status, payload } = this.readVerificationToken(req.params.token);
 
-        if (!payload) {
-            return controller.render('Auth/VerifyEmail', {
+        if (status === 'invalid') {
+            return this.render(req, res, 'Auth/VerifyEmail', {
                 errors: { email: ['This verification link is invalid.'] }
             });
         }
 
-        const expiryMs = variables.EMAIL_VERIFICATION_EXPIRY * 60 * 1000;
-        if (Date.now() - payload.iat > expiryMs) {
+        if (status === 'expired') {
             const user = await req.user();
-            return controller.render('Auth/VerifyEmail', {
+            return this.render(req, res, 'Auth/VerifyEmail', {
                 email: user?.email,
                 errors: { email: ['This verification link has expired. Please request a new one.'] }
             });
         }
 
-        const verifyEmail = new VerifyEmail({
-            users: createUserRepository(req.entityManager),
-            emit: Emitter.emit.bind(Emitter),
-            now: () => new Date(),
-        });
-
-        const result = await verifyEmail.execute({
+        const result = await this.verifyEmailUseCase.execute({
             id: payload.id,
             email: payload.email,
         });
 
         if (result.status === 'invalid_user') {
-            return controller.render('Auth/VerifyEmail', {
+            return this.render(req, res, 'Auth/VerifyEmail', {
                 errors: { email: ['This verification link is invalid.'] }
             });
         }
 
         return res.redirect('/home');
-    }
+    };
 
-    static async resendVerification(req: Request, res: Response) {
-        const controller = new AuthController(req, res);
+    resendVerification = async (req: Request, res: Response) => {
         const user = await req.user();
 
         if (!user) {
             return res.redirect('/login');
         }
 
-        const resendVerification = new ResendVerification({
-            mailTransport: createMailTransport(),
-            appUrl: variables.APP_URL,
-            makeVerificationToken: currentUser => makeVerificationToken(currentUser.id, currentUser.email),
-        });
-
-        const result = await resendVerification.execute({ user });
+        const result = await this.resendVerificationUseCase.execute({ user });
 
         if (result.status === 'already_verified') {
-            return controller.render('Auth/VerifyEmail', {
+            return this.render(req, res, 'Auth/VerifyEmail', {
                 email: user.email,
                 status: 'Your email is already verified.'
             });
         }
 
-        return controller.render('Auth/VerifyEmail', {
+        return this.render(req, res, 'Auth/VerifyEmail', {
             email: user.email,
             status: 'A new verification link has been sent to your email address.'
         });
-    }
-}
-
-function createUserRepository(
-    entityManager: Request['orm']['em']
-): Pick<UserRepository, 'findOne' | 'persistAndFlush' | 'nativeDelete' | 'flush'> {
-    return {
-        findOne: (entity, where) => entityManager.findOne(entity, where),
-        persistAndFlush: entity => entityManager.persistAndFlush(entity),
-        nativeDelete: (entity, where) => entityManager.nativeDelete(entity, where),
-        flush: () => entityManager.flush(),
-    };
-}
-
-function createMailTransport(): MailTransport {
-    return {
-        sendMail: message => sendConfiguredMail(message),
     };
 }
