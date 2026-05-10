@@ -25,14 +25,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PAGES_DIR="$ROOT/src/views/pages"
-CTRL_DIR="$ROOT/src/controllers"
-ROUTES_FILE="$ROOT/src/routes/route.ts"
-MODELS_DIR="$ROOT/src/models"
-MAPPINGS_DIR="$ROOT/src/database/mappings"
-JOBS_DIR="$ROOT/src/jobs"
-MAIL_DIR="$ROOT/src/mail/templates"
-LISTENERS_DIR="$ROOT/src/listeners"
+PAGES_DIR="$ROOT/src/adapters/inbound/http/views/pages"
+CTRL_DIR="$ROOT/src/adapters/inbound/http/controllers"
+ROUTES_FILE="$ROOT/src/adapters/inbound/http/routes/route.ts"
+MODELS_DIR="$ROOT/src/core/models"
+MAPPINGS_DIR="$ROOT/src/adapters/outbound/persistence/mappings"
+JOBS_DIR="$ROOT/src/adapters/inbound/jobs"
+MAIL_DIR="$ROOT/src/adapters/outbound/mail/templates"
+LISTENERS_DIR="$ROOT/src/adapters/shared/listeners"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -59,14 +59,14 @@ kebab() {
 
 # basename of a page path: Auth/Profile -> Profile
 basename_of() { printf '%s' "${1##*/}"; }
+camel_var() { printf '%s' "$1" | awk '{print tolower(substr($0,1,1)) substr($0,2)}'; }
 
-# Insert a route line before `export default route;`
+# Insert a route line before `return route;`
 insert_route_line() {
 	local line="$1"
 	grep -qF "$line" "$ROUTES_FILE" && { info "route already present, skipping"; return; }
-	# Insert a blank separator only if the previous line isn't already blank
 	awk -v ins="$line" '
-		/^export default route;/ && !done {
+		/^[[:space:]]*return route;$/ && !done {
 			print ins
 			print ""
 			done = 1
@@ -74,7 +74,7 @@ insert_route_line() {
 		{ print }
 	' "$ROUTES_FILE" > "$ROUTES_FILE.tmp"
 	mv "$ROUTES_FILE.tmp" "$ROUTES_FILE"
-	info "updated src/routes/route.ts"
+	info "updated src/adapters/inbound/http/routes/route.ts"
 }
 
 ensure_import() {
@@ -94,29 +94,59 @@ ensure_import() {
 	mv "$ROUTES_FILE.tmp" "$ROUTES_FILE"
 }
 
+ensure_route_controller() {
+	local name="$1"
+	local class_name="${name}Controller"
+	local var_name
+	var_name="$(camel_var "$name")Controller"
+
+	if ! grep -qF "    ${var_name}: ${class_name};" "$ROUTES_FILE"; then
+		awk -v ins="    ${var_name}: ${class_name};" '
+			/^interface RouteControllers \{/ { in_interface = 1 }
+			in_interface && /^\}/ && !done {
+				print ins
+				done = 1
+			}
+			{ print }
+		' "$ROUTES_FILE" > "$ROUTES_FILE.tmp"
+		mv "$ROUTES_FILE.tmp" "$ROUTES_FILE"
+	fi
+
+	if ! grep -qF "    ${var_name}," "$ROUTES_FILE"; then
+		awk -v ins="    ${var_name}," '
+			/^[[:space:]]*}: RouteControllers\) \{$/ && !done {
+				print ins
+				done = 1
+			}
+			{ print }
+		' "$ROUTES_FILE" > "$ROUTES_FILE.tmp"
+		mv "$ROUTES_FILE.tmp" "$ROUTES_FILE"
+	fi
+}
+
 # --- generators ------------------------------------------------------------
 
 make_controller() {
 	local name="$1"              # Posts  or  Billing
 	local file="$CTRL_DIR/${name}Controller.ts"
+	mkdir -p "$CTRL_DIR"
 	if [ -e "$file" ]; then
 		info "controller exists: ${name}Controller.ts"
 		return
 	fi
 	cat > "$file" <<TS
 import { Request, Response } from 'express';
-import { BaseController } from './BaseController';
+import { BaseController } from '@/adapters/inbound/http/controllers/BaseController';
 
-export class ${name}Controller extends BaseController {
-	static async index(req: Request, res: Response) {
-		const instance = new ${name}Controller();
-		return await instance.render(req, res, '${name}', {
+export class ${name}Controller {
+	index = async (req: Request, res: Response) => {
+		return new BaseController(req, res).render('${name}', {
 			title: '${name}',
 		});
-	}
+	};
 }
 TS
-	green "created src/controllers/${name}Controller.ts"
+	green "created src/adapters/inbound/http/controllers/${name}Controller.ts"
 }
 
 make_page() {
@@ -148,7 +178,7 @@ export default function ${base}({ title }: Props) {
 				<main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 					<h1 className="text-3xl font-light">{title}</h1>
 					<p className="mt-4 text-gray-600">
-						Edit <code>src/views/pages/${page_path}.tsx</code> to get started.
+						Edit <code>src/adapters/inbound/http/views/pages/${page_path}.tsx</code> to get started.
 					</p>
 				</main>
 			</div>
@@ -156,7 +186,7 @@ export default function ${base}({ title }: Props) {
 	);
 }
 TSX
-	green "created src/views/pages/${page_path}.tsx"
+	green "created src/adapters/inbound/http/views/pages/${page_path}.tsx"
 }
 
 # Resolve a field type spec ("string", "text?", "int", "datetime?") to:
@@ -224,6 +254,7 @@ make_model() {
 	local name="$1"              # Post
 	local fields="${2:-}"        # "title:string,body:text"
 	local file="$MODELS_DIR/${name}.ts"
+	mkdir -p "$MODELS_DIR"
 	if [ -e "$file" ]; then
 		info "model exists: ${name}.ts"
 		return
@@ -238,7 +269,7 @@ make_model() {
 		printf '\tupdatedAt: Date = new Date();\n'
 		printf '}\n'
 	} > "$file"
-	green "created src/models/${name}.ts"
+	green "created src/core/models/${name}.ts"
 }
 
 make_mapping() {
@@ -249,6 +280,7 @@ make_mapping() {
 	local table
 	table="$(kebab "$name" | tr '-' '_')s"
 	local file="$MAPPINGS_DIR/${lower}.map.ts"
+	mkdir -p "$MAPPINGS_DIR"
 	if [ -e "$file" ]; then
 		info "mapping exists: ${lower}.map.ts"
 		return
@@ -257,7 +289,7 @@ make_mapping() {
 	prop_lines="$(emit_mapping_fields "$fields")"
 	{
 		printf 'import { EntitySchema } from "@mikro-orm/postgresql";\n'
-		printf 'import { %s } from "@/models/%s";\n\n' "$name" "$name"
+		printf 'import { %s } from "@/core/models/%s";\n\n' "$name" "$name"
 		printf 'export const %sMapper = new EntitySchema<%s>({\n' "$name" "$name"
 		printf '\tclass: %s,\n' "$name"
 		printf '\ttableName: "%s",\n' "$table"
@@ -269,7 +301,7 @@ make_mapping() {
 		printf '\t},\n'
 		printf '});\n'
 	} > "$file"
-	green "created src/database/mappings/${lower}.map.ts"
+	green "created src/adapters/outbound/persistence/mappings/${lower}.map.ts"
 }
 
 add_route() {
@@ -286,8 +318,11 @@ add_route() {
 	local ctrl="${target%.*}"
 	local action="${target#*.}"
 	[ "$ctrl" = "$target" ] && die "route target must be Controller.action (got: $target)"
+	local ctrl_var
+	ctrl_var="$(camel_var "$ctrl")Controller"
 
-	ensure_import "import { ${ctrl}Controller } from '../controllers/${ctrl}Controller';"
+	ensure_import "import { ${ctrl}Controller } from '@/adapters/inbound/http/controllers/${ctrl}Controller';"
+	ensure_route_controller "$ctrl"
 
 	local middleware=""
 	case "$guard" in
@@ -295,7 +330,7 @@ add_route() {
 		guest) middleware=", guest" ;;
 	esac
 
-	local line="route.${method}('${url}'${middleware}, ${ctrl}Controller.${action});"
+	local line="    route.${method}('${url}'${middleware}, ${ctrl_var}.${action});"
 	insert_route_line "$line"
 }
 
@@ -393,17 +428,22 @@ make_job() {
 		return
 	fi
 	cat > "$file" <<TS
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
+
 interface ${name}Payload {
 	// add your payload fields here
 }
 
 export async function ${camel}(payload: unknown): Promise<void> {
 	const data = payload as ${name}Payload;
-	// TODO: implement job logic
-	void data;
+	PinoLogger.info({
+		scope: 'job:${camel}',
+		message: 'TODO: implement ${name}',
+		params: data,
+	});
 }
 TS
-	green "created src/jobs/${camel}.ts"
+	green "created src/adapters/inbound/jobs/${camel}.ts"
 }
 
 make_mail() {
@@ -426,7 +466,7 @@ export function ${name}(data: ${name}Data): string {
 	\`;
 }
 TS
-	green "created src/mail/templates/${name}.ts"
+	green "created src/adapters/outbound/mail/templates/${name}.ts"
 }
 
 make_event_listener() {
@@ -440,15 +480,18 @@ make_event_listener() {
 		return
 	fi
 	cat > "$file" <<TS
-import { emitter } from '../lib/events';
+import type { AppEvents } from '@/core/events/AppEvents';
+import { Emitter } from '@/adapters/shared/events';
 
-// TODO: replace 'user.registered' with the event you want to listen for
-emitter.on('user.registered', (payload) => {
+const eventName: keyof AppEvents = 'user.registered';
+
+// TODO: replace eventName with the event you want to listen for
+Emitter.on(eventName, (payload) => {
 	// TODO: implement ${name} listener logic
 	void payload;
 });
 TS
-	green "created src/listeners/${camel}.ts"
+	green "created src/adapters/shared/listeners/${camel}.ts"
 }
 
 cmd_job() {
