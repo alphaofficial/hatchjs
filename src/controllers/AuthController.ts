@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
-import { User } from '@/core/models/User';
 import { ForgotPassword } from '@/core/use-cases/ForgotPassword';
 import { LoginUser } from '@/core/use-cases/LoginUser';
 import { RegisterUser } from '@/core/use-cases/RegisterUser';
 import { ResetPassword } from '@/core/use-cases/ResetPassword';
+import { VerifyEmail } from '@/core/use-cases/VerifyEmail';
 import { Mailer } from '../lib/mail';
 import { Emitter } from '../lib/events';
 import { z } from 'zod';
@@ -285,18 +285,21 @@ export class AuthController extends BaseController {
             });
         }
 
-        const em = req.entityManager;
-        const user = await em.findOne(User, { id: payload.id, email: payload.email });
-        if (!user) {
+        const verifyEmail = new VerifyEmail({
+            users: createUserRepository(req.entityManager),
+            emit: Emitter.emit.bind(Emitter),
+            now: () => new Date(),
+        });
+
+        const result = await verifyEmail.execute({
+            id: payload.id,
+            email: payload.email,
+        });
+
+        if (result.status === 'invalid_user') {
             return controller.render('Auth/VerifyEmail', {
                 errors: { email: ['This verification link is invalid.'] }
             });
-        }
-
-        if (!user.emailVerifiedAt) {
-            user.emailVerifiedAt = new Date();
-            await em.flush();
-            Emitter.emit('user.verified', { id: user.id, email: user.email });
         }
 
         return res.redirect('/home');
