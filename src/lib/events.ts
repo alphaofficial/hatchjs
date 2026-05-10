@@ -1,10 +1,5 @@
 import { EventEmitter } from 'node:events';
-
-export interface AppEvents {
-    'user.registered': { id: string; email: string };
-    'user.login': { id: string; email: string };
-    'user.verified': { id: string; email: string };
-}
+import type { AppEvents } from '@/core/events/AppEvents';
 
 class TypedEmitter extends EventEmitter {
     emit<K extends keyof AppEvents>(event: K, payload: AppEvents[K]): boolean {

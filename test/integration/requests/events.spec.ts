@@ -1,4 +1,5 @@
-import { Emitter, AppEvents } from '@/lib/events';
+import type { AppEvents } from '@/core/events/AppEvents';
+import { Emitter } from '@/lib/events';
 
 describe('event bus', () => {
     afterEach(() => {
@@ -47,5 +48,9 @@ describe('event bus', () => {
         Emitter.on('user.login', () => results.push('second'));
         Emitter.emit('user.login', { id: '1', email: 'x@x.com' });
         expect(results).toEqual(['first', 'second']);
+    });
+
+    it('does not expose runtime exports from AppEvents', () => {
+        expect(Object.keys(require('@/core/events/AppEvents'))).toEqual([]);
     });
 });

@@ -16,7 +16,7 @@ import { Session } from "@/core/models/Session";
 import { injectAuthHelpers } from "../../../src/middleware/authUtils";
 import { InertiaExpressMiddleware } from "../../../src/middleware/inertia";
 import { PinoLogger } from "../../../src/logger/pinoLogger";
-import { Hash } from "../../../src/utils/Hash";
+import { Hash } from "../../../src/core/utils/Hash";
 import { authRateLimit } from "../../../src/middleware/rateLimit";
 import { notFoundHandler, globalErrorHandler } from "../../../src/middleware/errorHandler";
 import { bootstrapTestApp } from "../testHelpers";

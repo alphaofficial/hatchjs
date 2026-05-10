@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
-import { Hash } from '../utils/Hash';
+import { Hash } from '@/core/utils/Hash';
 import { User } from '@/core/models/User';
 import { PasswordReset } from '@/core/models/PasswordReset';
 import { Session } from '@/core/models/Session';
