@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createRequire } from 'node:module';
-import variables from '../config/variables';
+import variables from '@/config/variables';
 
 const templatePath = path.join(process.cwd(), 'public', 'template.html');
 const ssrBundlePath = path.join(process.cwd(), 'dist', 'ssr.mjs');
