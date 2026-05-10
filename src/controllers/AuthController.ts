@@ -4,6 +4,7 @@ import { Hash } from '@/core/utils/Hash';
 import { User } from '@/core/models/User';
 import { PasswordReset } from '@/core/models/PasswordReset';
 import { Session } from '@/core/models/Session';
+import { ForgotPassword } from '@/core/use-cases/ForgotPassword';
 import { LoginUser } from '@/core/use-cases/LoginUser';
 import { RegisterUser } from '@/core/use-cases/RegisterUser';
 import { Mailer } from '../lib/mail';
@@ -179,33 +180,24 @@ export class AuthController extends BaseController {
 
         try {
             const { email } = forgotPasswordSchema.parse(req.body);
-            const em = req.entityManager;
-            const user = await em.findOne(User, { email });
+            const forgotPassword = new ForgotPassword({
+                users: createUserRepository(req.entityManager),
+                mailTransport: createMailTransport(),
+                appUrl: variables.APP_URL,
+                passwordResetExpiryMinutes: variables.PASSWORD_RESET_EXPIRY,
+                createResetToken: () => {
+                    const rawToken = crypto.randomBytes(32).toString('hex');
+                    const tokenHash = crypto
+                        .createHmac('sha256', variables.APP_KEY)
+                        .update(rawToken)
+                        .digest('hex');
 
-            // Always respond with success to prevent email enumeration
-            if (user) {
-                const rawToken = crypto.randomBytes(32).toString('hex');
-                const tokenHash = crypto
-                    .createHmac('sha256', variables.APP_KEY)
-                    .update(rawToken)
-                    .digest('hex');
+                    return { rawToken, tokenHash };
+                },
+                now: () => new Date(),
+            });
 
-                // Upsert: delete any existing reset for this email, then insert
-                await em.nativeDelete(PasswordReset, { email });
-                const reset = em.create(PasswordReset, { email, tokenHash, createdAt: new Date() });
-                await em.persistAndFlush(reset);
-
-                const appUrl = variables.APP_URL;
-                const resetUrl = `${appUrl}/reset-password/${rawToken}?email=${encodeURIComponent(email)}`;
-                const html = `
-                    <p>You requested a password reset for your account.</p>
-                    <p><a href="${resetUrl}">Click here to reset your password</a></p>
-                    <p>This link expires in ${variables.PASSWORD_RESET_EXPIRY} minutes.</p>
-                    <p>If you did not request this, please ignore this email.</p>
-                `;
-
-                await Mailer.send(email, 'Password Reset Request', html);
-            }
+            await forgotPassword.execute({ email });
 
             return controller.render('Auth/ForgotPassword', {
                 status: 'We have emailed your password reset link!'
@@ -354,10 +346,13 @@ export class AuthController extends BaseController {
     }
 }
 
-function createUserRepository(entityManager: Request['orm']['em']): Pick<UserRepository, 'findOne' | 'persistAndFlush'> {
+function createUserRepository(
+    entityManager: Request['orm']['em']
+): Pick<UserRepository, 'findOne' | 'persistAndFlush' | 'nativeDelete'> {
     return {
         findOne: (entity, where) => entityManager.findOne(entity, where),
         persistAndFlush: entity => entityManager.persistAndFlush(entity),
+        nativeDelete: (entity, where) => entityManager.nativeDelete(entity, where),
     };
 }
 
