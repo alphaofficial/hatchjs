@@ -1,10 +1,10 @@
 import 'dotenv-defaults/config';
 import { MikroORM } from '@mikro-orm/core';
-import ormConfig from './adapters/outbound/persistence/orm.config';
-import { Scheduler } from './adapters/shared/scheduler';
+import ormConfig from '@/adapters/outbound/persistence/orm.config';
+import { Scheduler } from '@/adapters/shared/scheduler';
 import { Session } from '@/core/models/Session';
-import { PinoLogger } from './adapters/shared/logger/pinoLogger';
-import variables from './config/variables';
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
+import variables from '@/config/variables';
 
 async function cleanExpiredSessions(orm: MikroORM): Promise<void> {
     const maxAgeSeconds = Math.floor(variables.SESSION_MAX_AGE / 1000);
@@ -16,7 +16,18 @@ async function cleanExpiredSessions(orm: MikroORM): Promise<void> {
     }
 }
 
-async function main() {
+function registerShutdown(orm: MikroORM): void {
+    const shutdown = async () => {
+        PinoLogger.info({ scope: 'scheduler', message: 'Shutting down scheduler...' });
+        await orm.close(true);
+        process.exit(0);
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+}
+
+export async function startScheduler(): Promise<MikroORM> {
     const orm = await MikroORM.init(ormConfig);
 
     // Clean expired sessions every hour
@@ -29,17 +40,14 @@ async function main() {
         params: { tasks: registered.map(t => t.expression) },
     });
 
-    const shutdown = async () => {
-        PinoLogger.info({ scope: 'scheduler', message: 'Shutting down scheduler...' });
-        await orm.close(true);
-        process.exit(0);
-    };
+    registerShutdown(orm);
 
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
+    return orm;
 }
 
-main().catch(err => {
-    PinoLogger.error({ scope: 'scheduler', message: 'Scheduler failed to start', params: { error: err } });
-    process.exit(1);
-});
+if (require.main === module) {
+    startScheduler().catch(err => {
+        PinoLogger.error({ scope: 'scheduler', message: 'Scheduler failed to start', params: { error: err } });
+        process.exit(1);
+    });
+}
