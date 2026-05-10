@@ -3,6 +3,7 @@ import { BaseController } from './BaseController';
 import { ForgotPassword } from '@/core/use-cases/ForgotPassword';
 import { LoginUser } from '@/core/use-cases/LoginUser';
 import { RegisterUser } from '@/core/use-cases/RegisterUser';
+import { ResendVerification } from '@/core/use-cases/ResendVerification';
 import { ResetPassword } from '@/core/use-cases/ResetPassword';
 import { VerifyEmail } from '@/core/use-cases/VerifyEmail';
 import { Mailer } from '../lib/mail';
@@ -313,22 +314,20 @@ export class AuthController extends BaseController {
             return res.redirect('/login');
         }
 
-        if (user.emailVerifiedAt) {
+        const resendVerification = new ResendVerification({
+            mailTransport: createMailTransport(),
+            appUrl: variables.APP_URL,
+            makeVerificationToken: currentUser => makeVerificationToken(currentUser.id, currentUser.email),
+        });
+
+        const result = await resendVerification.execute({ user });
+
+        if (result.status === 'already_verified') {
             return controller.render('Auth/VerifyEmail', {
                 email: user.email,
                 status: 'Your email is already verified.'
             });
         }
-
-        const token = makeVerificationToken(user.id, user.email);
-        const appUrl = variables.APP_URL;
-        const verifyUrl = `${appUrl}/verify-email/${token}`;
-        const html = `
-            <p>Please verify your email address.</p>
-            <p><a href="${verifyUrl}">Click here to verify your email address</a></p>
-            <p>If you did not create an account, please ignore this email.</p>
-        `;
-        await Mailer.send(user.email, 'Verify your email address', html);
 
         return controller.render('Auth/VerifyEmail', {
             email: user.email,
