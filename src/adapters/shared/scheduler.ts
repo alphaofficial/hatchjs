@@ -1,6 +1,6 @@
 import * as cron from 'node-cron';
 import type { ScheduledTask as CronTask } from 'node-cron';
-import { PinoLogger } from '../adapters/shared/logger/pinoLogger';
+import { PinoLogger } from './logger/pinoLogger';
 
 export interface ScheduledTask {
     expression: string;
