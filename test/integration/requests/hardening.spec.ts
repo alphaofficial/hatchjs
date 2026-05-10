@@ -13,7 +13,7 @@ import { SessionStore, generateSessionToken } from "../../../src/adapters/inboun
 import { Session } from "@/core/models/Session";
 import { injectAuthHelpers } from "../../../src/adapters/inbound/http/middleware/authUtils";
 import { InertiaExpressMiddleware } from "../../../src/adapters/inbound/http/middleware/inertia";
-import { PinoLogger } from "../../../src/logger/pinoLogger";
+import { PinoLogger } from "../../../src/adapters/shared/logger/pinoLogger";
 import { Hash } from "../../../src/core/utils/Hash";
 import { authRateLimit } from "../../../src/adapters/inbound/http/middleware/rateLimit";
 import { notFoundHandler, globalErrorHandler } from "../../../src/adapters/inbound/http/middleware/errorHandler";

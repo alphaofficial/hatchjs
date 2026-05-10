@@ -1,5 +1,5 @@
 import { LogTransport } from '@/adapters/outbound/mail/log';
-import { PinoLogger } from '@/logger/pinoLogger';
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
 
 describe('log transport adapter', () => {
     it('logs the outgoing mail payload through PinoLogger', async () => {

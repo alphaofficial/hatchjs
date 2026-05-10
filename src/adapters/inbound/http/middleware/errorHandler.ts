@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction, ErrorRequestHandler, RequestHandler } from 'express';
 import variables from '@/config/variables';
 import { BaseController } from '@/adapters/inbound/http/controllers/BaseController';
-import { PinoLogger } from '@/logger/pinoLogger';
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
 
 /**
  * 404 handler — renders an Inertia Error page if the request reached

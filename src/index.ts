@@ -7,7 +7,7 @@ import compression from 'compression';
 import routes from './adapters/inbound/http/routes/route';
 import ormConfig from './adapters/outbound/persistence/orm.config';
 import { MikroORM, RequestContext } from '@mikro-orm/core';
-import { PinoLogger } from './logger/pinoLogger';
+import { PinoLogger } from './adapters/shared/logger/pinoLogger';
 import variables from './config/variables';
 import { User } from '@/core/models/User';
 import { SessionStore, generateSessionToken } from '@/adapters/inbound/http/middleware/sessionStore';

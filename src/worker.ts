@@ -1,7 +1,7 @@
 import 'dotenv-defaults/config';
 import { Queue } from './lib/queue';
 import { sendWelcomeEmail } from './adapters/inbound/jobs/sendWelcomeEmail';
-import { PinoLogger } from './logger/pinoLogger';
+import { PinoLogger } from './adapters/shared/logger/pinoLogger';
 
 const connectionString = process.env.DATABASE_URL;
 

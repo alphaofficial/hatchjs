@@ -1,4 +1,4 @@
-import { PinoLogger } from '@/logger/pinoLogger';
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
 
 interface SendWelcomeEmailPayload {
 	to: string;

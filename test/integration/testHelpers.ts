@@ -1,6 +1,6 @@
 import session from "express-session";
 import variables from "../../src/config/variables";
-import { PinoLogger } from "../../src/logger/pinoLogger";
+import { PinoLogger } from "../../src/adapters/shared/logger/pinoLogger";
 import { MikroORM, RequestContext } from "@mikro-orm/core";
 import ormConfig from "../../src/adapters/outbound/persistence/orm.config";
 import { SessionStore, generateSessionToken } from "../../src/adapters/inbound/http/middleware/sessionStore";

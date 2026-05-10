@@ -1,4 +1,4 @@
-import { PinoLogger } from '@/logger/pinoLogger';
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
 import type { MailMessage, MailTransport } from '@/ports/mail';
 
 export class LogTransport implements MailTransport {

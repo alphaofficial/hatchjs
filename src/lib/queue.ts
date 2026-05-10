@@ -1,7 +1,7 @@
 import { run, quickAddJob } from 'graphile-worker';
 import type { Runner } from 'graphile-worker';
 import type { QueueDriver } from '@/ports/queue';
-import { PinoLogger } from '../logger/pinoLogger';
+import { PinoLogger } from '../adapters/shared/logger/pinoLogger';
 import variables from '../config/variables';
 
 let runner: Runner | null = null;

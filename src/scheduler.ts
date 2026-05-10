@@ -3,7 +3,7 @@ import { MikroORM } from '@mikro-orm/core';
 import ormConfig from './adapters/outbound/persistence/orm.config';
 import { Scheduler } from './lib/scheduler';
 import { Session } from '@/core/models/Session';
-import { PinoLogger } from './logger/pinoLogger';
+import { PinoLogger } from './adapters/shared/logger/pinoLogger';
 import variables from './config/variables';
 
 async function cleanExpiredSessions(orm: MikroORM): Promise<void> {
