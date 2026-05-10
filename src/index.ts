@@ -15,6 +15,7 @@ import { verifyOrigin } from '@/adapters/inbound/http/middleware/csrf';
 import { notFoundHandler, globalErrorHandler } from '@/adapters/inbound/http/middleware/errorHandler';
 import { Mailer } from '@/lib/mail';
 import { LogTransport } from '@/adapters/outbound/mail/log';
+import { SmtpTransport } from '@/adapters/outbound/mail/smtp';
 
 declare module "express-serve-static-core" {
 	interface Request {
@@ -38,6 +39,7 @@ app.set('trust proxy', variables.TRUST_PROXY);
 
 async function bootstrap() {
   Mailer.registerDriver('log', new LogTransport());
+  Mailer.registerDriver('smtp', new SmtpTransport());
   const orm = await MikroORM.init(ormConfig);
   const sessionStore = new SessionStore(orm);
 
