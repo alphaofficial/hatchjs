@@ -1,13 +1,12 @@
 import { execSync } from "child_process";
 import path from "path";
 import { pathToFileURL } from "url";
-import { build, mergeConfig } from "vite";
+import { build } from "vite";
 
 export default async function globalSetup() {
 	const root = path.resolve(__dirname, "../../..");
 
 	// Rebuild the frontend so all pages are included in the bundle.
-	// Override only the entry path here; shared tooling updates land separately.
 	console.log("Building frontend for E2E tests...");
 	const viteConfigModule = await import(
 		pathToFileURL(path.join(root, "vite.config.mjs")).href
@@ -18,15 +17,7 @@ export default async function globalSetup() {
 			: viteConfigModule.default;
 	const previousNodeEnv = process.env.NODE_ENV;
 	try {
-		await build(
-			mergeConfig(baseConfig, {
-				build: {
-					rollupOptions: {
-						input: path.join(root, "src/adapters/inbound/http/views/main.tsx"),
-					},
-				},
-			})
-		);
+		await build(baseConfig);
 	} finally {
 		if (previousNodeEnv === undefined) {
 			delete process.env.NODE_ENV;
