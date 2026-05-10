@@ -2,7 +2,7 @@ import { Store } from 'express-session';
 import { MikroORM } from '@mikro-orm/core';
 import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import { Session } from '@/core/models/Session';
-import variables from '../config/variables';
+import variables from '@/config/variables';
 
 // 32-character alphabet (base32 without visually ambiguous characters).
 const TOKEN_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789';

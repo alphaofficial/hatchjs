@@ -17,7 +17,7 @@ const SCAFFOLD_SRC = join(REPO_ROOT, "scripts", "scaffold.sh");
 
 // Minimal route.ts seed: scaffold.sh inserts routes above `export default route;`
 const ROUTE_SEED = `import { Router } from 'express';
-import { auth, guest } from '../middleware/auth';
+import { auth, guest } from '../adapters/inbound/http/middleware/auth';
 
 const route = Router();
 

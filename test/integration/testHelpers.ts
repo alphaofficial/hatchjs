@@ -3,15 +3,15 @@ import variables from "../../src/config/variables";
 import { PinoLogger } from "../../src/logger/pinoLogger";
 import { MikroORM, RequestContext } from "@mikro-orm/core";
 import ormConfig from "../../src/database/orm.config";
-import { SessionStore, generateSessionToken } from "../../src/middleware/sessionStore";
-import { verifyOrigin } from "../../src/middleware/csrf";
+import { SessionStore, generateSessionToken } from "../../src/adapters/inbound/http/middleware/sessionStore";
+import { verifyOrigin } from "../../src/adapters/inbound/http/middleware/csrf";
 import express from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
 import routes from "../../src/routes/route";
 import path from "node:path";
-import { injectAuthHelpers } from "../../src/middleware/authUtils";
-import { notFoundHandler, globalErrorHandler } from "../../src/middleware/errorHandler";
+import { injectAuthHelpers } from "../../src/adapters/inbound/http/middleware/authUtils";
+import { notFoundHandler, globalErrorHandler } from "../../src/adapters/inbound/http/middleware/errorHandler";
 
 declare module "express-serve-static-core" {
 	interface Request {

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import variables from '../config/variables';
+import variables from '@/config/variables';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 

@@ -3,9 +3,9 @@ import { PublicController } from '@/adapters/inbound/http/controllers/PublicCont
 import { AboutController } from '@/adapters/inbound/http/controllers/AboutController';
 import { UserController } from '@/adapters/inbound/http/controllers/UserController';
 import { AuthController } from '@/adapters/inbound/http/controllers/AuthController';
-import { InertiaExpressMiddleware } from '../middleware/inertia';
-import { auth, guest, verified } from '../middleware/auth';
-import { authRateLimit, featureRateLimit } from '../middleware/rateLimit';
+import { InertiaExpressMiddleware } from '@/adapters/inbound/http/middleware/inertia';
+import { auth, guest, verified } from '@/adapters/inbound/http/middleware/auth';
+import { authRateLimit, featureRateLimit } from '@/adapters/inbound/http/middleware/rateLimit';
 
 const route = Router();
 

@@ -10,9 +10,9 @@ import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { PinoLogger } from './logger/pinoLogger';
 import variables from './config/variables';
 import { User } from '@/core/models/User';
-import { SessionStore, generateSessionToken } from './middleware/sessionStore';
-import { verifyOrigin } from './middleware/csrf';
-import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler';
+import { SessionStore, generateSessionToken } from '@/adapters/inbound/http/middleware/sessionStore';
+import { verifyOrigin } from '@/adapters/inbound/http/middleware/csrf';
+import { notFoundHandler, globalErrorHandler } from '@/adapters/inbound/http/middleware/errorHandler';
 
 declare module "express-serve-static-core" {
 	interface Request {
@@ -99,7 +99,7 @@ async function bootstrap() {
 
   // inject authentication helper methods into request
   app.use((req, _, next) => {
-    const { injectAuthHelpers } = require('./middleware/authUtils');
+    const { injectAuthHelpers } = require('./adapters/inbound/http/middleware/authUtils');
     injectAuthHelpers(req, _, next);
   });
 
