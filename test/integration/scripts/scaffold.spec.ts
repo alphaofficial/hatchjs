@@ -331,7 +331,7 @@ describe("scaffold.sh", () => {
 				`model Post --fields "title:string,body:text,publishedAt:datetime?"`,
 			);
 
-			// Rewrite `@/models/Post` alias to a relative import so jest can resolve it
+			// Rewrite `@/core/models/Post` alias to a relative import so jest can resolve it
 			// without the project's moduleNameMapper pointing at the real src tree.
 			const mappingPath = join(
 				dir,
