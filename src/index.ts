@@ -4,7 +4,7 @@ import session from 'express-session';
 import path from 'path';
 import helmet from 'helmet';
 import compression from 'compression';
-import routes from './routes/route';
+import routes from './adapters/inbound/http/routes/route';
 import ormConfig from './database/orm.config';
 import { MikroORM, RequestContext } from '@mikro-orm/core';
 import { PinoLogger } from './logger/pinoLogger';

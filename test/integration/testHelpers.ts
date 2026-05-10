@@ -8,7 +8,7 @@ import { verifyOrigin } from "../../src/adapters/inbound/http/middleware/csrf";
 import express from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
-import routes from "../../src/routes/route";
+import routes from "../../src/adapters/inbound/http/routes/route";
 import path from "node:path";
 import { injectAuthHelpers } from "../../src/adapters/inbound/http/middleware/authUtils";
 import { notFoundHandler, globalErrorHandler } from "../../src/adapters/inbound/http/middleware/errorHandler";
