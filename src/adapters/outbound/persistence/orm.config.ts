@@ -3,10 +3,12 @@ import type { Options } from "@mikro-orm/core";
 import { Migrator } from "@mikro-orm/migrations";
 import { SqliteDriver } from "@mikro-orm/sqlite";
 import { env } from "@/config/variables";
+import { PasswordResetMapper } from "./mappings/PasswordReset.map";
+import { SessionMapper } from "./mappings/session.map";
+import { UserMapper } from "./mappings/user.map";
 
 const mikroOrmOptions: Options = {
-	entities: ["dist/database/mappings/*.map.js"],
-	entitiesTs: ["src/database/mappings/*.map.ts"],
+	entities: [PasswordResetMapper, SessionMapper, UserMapper],
 	dbName: env("DB_PATH", "theboringarchitecture.db") as string,
 	driver: SqliteDriver,
 	pool: {
