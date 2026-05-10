@@ -32,8 +32,8 @@ const mikroOrmOptions: Options = {
 		}
 	},
 	migrations: {
-		path: "dist/database/migrations",
-		pathTs: "src/database/migrations",
+		path: "dist/adapters/outbound/persistence/migrations",
+		pathTs: "src/adapters/outbound/persistence/migrations",
 	},
 	resultCache: {
 		global: 0,
