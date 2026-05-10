@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently --names \"pages,server,client,ssr\" --prefix-colors \"yellow,cyan,magenta,blue\" \"npm run pages:watch\" \"npm run dev:server\" \"npm run dev:client\" \"npm run dev:ssr\"",
-    "dev:server": "nodemon --exec tsx src/index.ts",
+    "dev:server": "nodemon --watch src --ext ts,json --exec \"node --import tsx\" src/index.ts",
     "dev:client": "vite build --watch",
     "dev:ssr": "vite build --config vite.ssr.config.mjs --watch",
     "scaffold": "bash scripts/scaffold.sh",
@@ -27,8 +27,8 @@
     "migration:status": "mikro-orm migration:check",
     "migrate": "npm run migration:create && npm run migration:run",
     "db:seed": "mikro-orm seeder:run",
-    "work": "tsx src/worker.ts",
-    "scheduler": "tsx src/scheduler.ts"
+    "work": "node --import tsx scripts/run-worker.ts",
+    "scheduler": "node --import tsx src/scheduler.ts"
   },
   "keywords": [],
   "author": "",
