@@ -4,6 +4,7 @@ import { Hash } from '@/core/utils/Hash';
 import { User } from '@/core/models/User';
 import { PasswordReset } from '@/core/models/PasswordReset';
 import { Session } from '@/core/models/Session';
+import { LoginUser } from '@/core/use-cases/LoginUser';
 import { RegisterUser } from '@/core/use-cases/RegisterUser';
 import { Mailer } from '../lib/mail';
 import { Emitter } from '../lib/events';
@@ -11,7 +12,7 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import variables from '../config/variables';
 import type { MailTransport } from '@/ports/mail';
-import type { RegisterUserDependencies } from '@/core/use-cases/RegisterUser';
+import type { UserRepository } from '@/ports/user-repository';
 
 // ---- email-verification token helpers ----
 
@@ -89,18 +90,19 @@ export class AuthController extends BaseController {
 
         try {
             const validatedData = loginSchema.parse(req.body);
-            const em = req.entityManager;
+            const loginUser = new LoginUser({
+                users: createUserRepository(req.orm.em),
+                emit: Emitter.emit.bind(Emitter),
+            });
+            const result = await loginUser.execute(validatedData);
 
-            const user = await em.findOne(User, { email: validatedData.email });
-
-            if (!user || !(await Hash.check(validatedData.password, user.password))) {
+            if (result.status === 'invalid_credentials') {
                 return controller.render('Auth/Login', {
                     errors: { email: 'Invalid credentials' }
                 });
             }
 
-            await req.authenticate(user);
-            Emitter.emit('user.login', { id: user.id, email: user.email });
+            await req.authenticate(result.user);
             return res.redirect('/home');
 
         } catch (error) {
@@ -352,7 +354,7 @@ export class AuthController extends BaseController {
     }
 }
 
-function createUserRepository(entityManager: Request['orm']['em']): RegisterUserDependencies['users'] {
+function createUserRepository(entityManager: Request['orm']['em']): Pick<UserRepository, 'findOne' | 'persistAndFlush'> {
     return {
         findOne: (entity, where) => entityManager.findOne(entity, where),
         persistAndFlush: entity => entityManager.persistAndFlush(entity),
