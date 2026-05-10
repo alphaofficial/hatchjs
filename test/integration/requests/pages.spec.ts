@@ -1,7 +1,7 @@
-import supertest from "supertest";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
 import { User } from "../../../src/core/models/User";
+import { agent, request } from "../http";
 
 describe("Pages Integration Tests", () => {
 	let app: any;
@@ -26,7 +26,7 @@ describe("Pages Integration Tests", () => {
 	describe("Public Pages", () => {
 		describe("GET /", () => {
 			it("should render landing page for unauthenticated users", async () => {
-				const response = await supertest(app).get("/");
+				const response = await request(app).get("/");
 				
 				expect(response.status).toBe(200);
 				
@@ -37,13 +37,13 @@ describe("Pages Integration Tests", () => {
 
 			it("should render landing page for authenticated users", async () => {
 				const user = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/");
+				const response = await session.get("/");
 				
 				expect(response.status).toBe(200);
 				
@@ -56,13 +56,13 @@ describe("Pages Integration Tests", () => {
 		describe("GET /about", () => {
 			it("should render About page for authenticated users", async () => {
 				const user = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/about");
+				const response = await session.get("/about");
 				
 				expect(response.status).toBe(200);
 				expect(response.text).toContain("About Us");
@@ -75,7 +75,7 @@ describe("Pages Integration Tests", () => {
 			});
 
 			it("should redirect unauthenticated users to login", async () => {
-				const response = await supertest(app).get("/about");
+				const response = await request(app).get("/about");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
@@ -86,7 +86,7 @@ describe("Pages Integration Tests", () => {
 	describe("Authentication Pages", () => {
 		describe("GET /login", () => {
 			it("should render login page for guests", async () => {
-				const response = await supertest(app).get("/login");
+				const response = await request(app).get("/login");
 				
 				expect(response.status).toBe(200);
 				
@@ -99,13 +99,13 @@ describe("Pages Integration Tests", () => {
 
 			it("should redirect authenticated users away from login", async () => {
 				const user = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/login");
+				const response = await session.get("/login");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/home");
@@ -119,7 +119,7 @@ describe("Pages Integration Tests", () => {
 					password: "password123"
 				});
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/login")
 					.send({ email: "test@example.com", password: "password123" });
 
@@ -128,7 +128,7 @@ describe("Pages Integration Tests", () => {
 			});
 
 			it("should return errors for invalid credentials", async () => {
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/login")
 					.send({ email: "invalid@example.com", password: "wrongpassword" });
 
@@ -140,7 +140,7 @@ describe("Pages Integration Tests", () => {
 			});
 
 			it("should return validation errors for missing fields", async () => {
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/login")
 					.send({ email: "", password: "" });
 
@@ -154,7 +154,7 @@ describe("Pages Integration Tests", () => {
 
 		describe("GET /register", () => {
 			it("should render register page for guests", async () => {
-				const response = await supertest(app).get("/register");
+				const response = await request(app).get("/register");
 				
 				expect(response.status).toBe(200);
 				
@@ -173,7 +173,7 @@ describe("Pages Integration Tests", () => {
 					password_confirmation: "password123"
 				};
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/register")
 					.send(userData);
 
@@ -196,7 +196,7 @@ describe("Pages Integration Tests", () => {
 					password_confirmation: "password123"
 				};
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/register")
 					.send(userData);
 
@@ -215,7 +215,7 @@ describe("Pages Integration Tests", () => {
 					password_confirmation: "different"
 				};
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/register")
 					.send(userData);
 
@@ -233,13 +233,13 @@ describe("Pages Integration Tests", () => {
 					name: "John Doe",
 					email: "john@example.com"
 				});
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/home");
+				const response = await session.get("/home");
 				
 				expect(response.status).toBe(200);
 				
@@ -251,7 +251,7 @@ describe("Pages Integration Tests", () => {
 			});
 
 			it("should redirect unauthenticated users to login", async () => {
-				const response = await supertest(app).get("/home");
+				const response = await request(app).get("/home");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
@@ -261,18 +261,18 @@ describe("Pages Integration Tests", () => {
 		describe("POST /logout", () => {
 			it("should logout authenticated user", async () => {
 				const testUser = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: testUser.email, password: "password123" });
 
-				const response = await agent.post("/logout");
+				const response = await session.post("/logout");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
 
-				const dashboardResponse = await agent.get("/home");
+				const dashboardResponse = await session.get("/home");
 				expect(dashboardResponse.status).toBe(302);
 				expect(dashboardResponse.headers.location).toBe("/login");
 			});
@@ -281,19 +281,19 @@ describe("Pages Integration Tests", () => {
 
 	describe("Health & Errors", () => {
 		it("GET /healthz returns 200", async () => {
-			const response = await supertest(app).get("/healthz");
+			const response = await request(app).get("/healthz");
 			expect(response.status).toBe(200);
 			expect(response.body.status).toBe("ok");
 		});
 
 		it("GET /readyz returns 200 when DB reachable", async () => {
-			const response = await supertest(app).get("/readyz");
+			const response = await request(app).get("/readyz");
 			expect(response.status).toBe(200);
 			expect(response.body.status).toBe("ready");
 		});
 
 		it("Unknown route renders Inertia Error page (404)", async () => {
-			const response = await supertest(app).get("/this-route-does-not-exist");
+			const response = await request(app).get("/this-route-does-not-exist");
 			expect(response.status).toBe(200); // BaseController.render sends 200; status is in props
 			const pageData = extractInertiaPageData(response.text);
 			expect(pageData.component).toBe("Error");
@@ -301,7 +301,7 @@ describe("Pages Integration Tests", () => {
 		});
 
 		it("Page-prop XSS payloads are HTML-escaped in the data-page attribute", async () => {
-			const response = await supertest(app).get("/");
+			const response = await request(app).get("/");
 			expect(response.status).toBe(200);
 			// Raw < and > from JSON should not appear unescaped inside the attribute
 			const attr = response.text.match(/data-page="([^"]*)"/)?.[1] ?? "";
@@ -313,7 +313,7 @@ describe("Pages Integration Tests", () => {
 		});
 
 		it("Helmet security headers are present", async () => {
-			const response = await supertest(app).get("/");
+			const response = await request(app).get("/");
 			expect(response.headers["x-content-type-options"]).toBe("nosniff");
 			expect(response.headers["x-frame-options"]).toBeDefined();
 		});
@@ -323,13 +323,13 @@ describe("Pages Integration Tests", () => {
 		describe("GET /users", () => {
 			it("should render users list for authenticated users", async () => {
 				const testUser = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: testUser.email, password: "password123" });
 
-				const response = await agent.get("/users");
+				const response = await session.get("/users");
 				
 				expect(response.status).toBe(200);
 				
@@ -348,7 +348,7 @@ describe("Pages Integration Tests", () => {
 			});
 
 			it("should redirect unauthenticated users to login", async () => {
-				const response = await supertest(app).get("/users");
+				const response = await request(app).get("/users");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
@@ -358,13 +358,13 @@ describe("Pages Integration Tests", () => {
 		describe("GET /users/:id", () => {
 			it("should render individual user page for authenticated users", async () => {
 				const testUser = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: testUser.email, password: "password123" });
 
-				const response = await agent.get("/users/1");
+				const response = await session.get("/users/1");
 				
 				expect(response.status).toBe(200);
 				
@@ -378,20 +378,20 @@ describe("Pages Integration Tests", () => {
 
 			it("should return 404 for non-existent user", async () => {
 				const testUser = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
+				const session = agent(app);
 				
-				await agent
+				await session
 					.post("/login")
 					.send({ email: testUser.email, password: "password123" });
 
-				const response = await agent.get("/users/999");
+				const response = await session.get("/users/999");
 				
 				expect(response.status).toBe(404);
 				expect(response.body.error).toBe("User not found");
 			});
 
 			it("should redirect unauthenticated users to login", async () => {
-				const response = await supertest(app).get("/users/1");
+				const response = await request(app).get("/users/1");
 				
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");

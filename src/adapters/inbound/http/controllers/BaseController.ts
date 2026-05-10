@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { PageName } from '../config/pages';
-import { renderHtml } from '../lib/renderHtml';
+import { PageName } from '@/config/pages';
+import { renderHtml } from '@/lib/renderHtml';
 
 export class BaseController {
 	protected req: Request;

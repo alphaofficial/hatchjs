@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, ErrorRequestHandler, RequestHandler } from 'express';
 import variables from '../config/variables';
-import { BaseController } from '../controllers/BaseController';
+import { BaseController } from '@/adapters/inbound/http/controllers/BaseController';
 import { PinoLogger } from '../logger/pinoLogger';
 
 /**

@@ -6,11 +6,11 @@ import { RegisterUser } from '@/core/use-cases/RegisterUser';
 import { ResendVerification } from '@/core/use-cases/ResendVerification';
 import { ResetPassword } from '@/core/use-cases/ResetPassword';
 import { VerifyEmail } from '@/core/use-cases/VerifyEmail';
-import { Mailer } from '../lib/mail';
-import { Emitter } from '../lib/events';
+import { Mailer } from '@/lib/mail';
+import { Emitter } from '@/lib/events';
 import { z } from 'zod';
 import crypto from 'crypto';
-import variables from '../config/variables';
+import variables from '@/config/variables';
 import type { MailTransport } from '@/ports/mail';
 import type { UserRepository } from '@/ports/user-repository';
 

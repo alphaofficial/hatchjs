@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { PublicController } from '../controllers/PublicController';
-import { AboutController } from '../controllers/AboutController';
-import { UserController } from '../controllers/UserController';
-import { AuthController } from '../controllers/AuthController';
+import { PublicController } from '@/adapters/inbound/http/controllers/PublicController';
+import { AboutController } from '@/adapters/inbound/http/controllers/AboutController';
+import { UserController } from '@/adapters/inbound/http/controllers/UserController';
+import { AuthController } from '@/adapters/inbound/http/controllers/AuthController';
 import { InertiaExpressMiddleware } from '../middleware/inertia';
 import { auth, guest, verified } from '../middleware/auth';
 import { authRateLimit, featureRateLimit } from '../middleware/rateLimit';

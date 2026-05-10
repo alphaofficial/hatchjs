@@ -1,7 +1,6 @@
 /**
  * Tests for production-hardening behavior added in Phase 1.
  */
-import supertest from "supertest";
 import express from "express";
 import helmet from "helmet";
 import compression from "compression";
@@ -21,6 +20,7 @@ import { authRateLimit } from "../../../src/middleware/rateLimit";
 import { notFoundHandler, globalErrorHandler } from "../../../src/middleware/errorHandler";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
+import { agent, request } from "../http";
 
 interface BootOpts {
 	throwingRoute?: boolean;
@@ -118,10 +118,10 @@ describe("Hardening", () => {
 		it("returns 429 once the configured threshold is exceeded", async () => {
 			const { app, close } = await bootApp({ rateLimit: { max: 3 } });
 			try {
-				const agent = supertest(app);
+				const client = request(app);
 				let last = 0;
 				for (let i = 0; i < 5; i++) {
-					const r = await agent.post("/__limited").send({});
+					const r = await client.post("/__limited").send({});
 					last = r.status;
 				}
 				expect(last).toBe(429);
@@ -136,7 +136,7 @@ describe("Hardening", () => {
 			const { app, close } = await bootApp({});
 			try {
 				const huge = "x".repeat(200 * 1024); // 200kb > 100kb cap
-				const r = await supertest(app)
+				const r = await request(app)
 					.post("/login")
 					.set("Content-Type", "application/json")
 					.send(JSON.stringify({ email: huge, password: "y" }));
@@ -151,7 +151,7 @@ describe("Hardening", () => {
 		it("renders the Inertia Error page on a thrown error", async () => {
 			const { app, close } = await bootApp({ throwingRoute: true });
 			try {
-				const r = await supertest(app).get("/__boom");
+				const r = await request(app).get("/__boom");
 				expect(r.status).toBe(500);
 				const m = r.text.match(/data-page="([^"]*)"/);
 				expect(m).toBeTruthy();
@@ -190,31 +190,31 @@ describe("Hardening", () => {
 
 		it("persists auth across requests via the session cookie", async () => {
 			const user = await factory.createUser({ email: "persist@example.com" });
-			const agent = supertest.agent(app);
+			const session = agent(app);
 
-			await agent
+			await session
 				.post("/login")
 				.send({ email: user.email, password: "password123" })
 				.expect(302);
 
-			const r1 = await agent.get("/home");
+			const r1 = await session.get("/home");
 			expect(r1.status).toBe(200);
 
-			const r2 = await agent.get("/about");
+			const r2 = await session.get("/about");
 			expect(r2.status).toBe(200);
 		});
 
 		it("rejects access after logout", async () => {
 			const user = await factory.createUser({ email: "logout@example.com" });
-			const agent = supertest.agent(app);
+			const session = agent(app);
 
-			await agent
+			await session
 				.post("/login")
 				.send({ email: user.email, password: "password123" });
 
-			await agent.post("/logout").expect(302);
+			await session.post("/logout").expect(302);
 
-			const r = await agent.get("/home");
+			const r = await session.get("/home");
 			expect(r.status).toBe(302);
 			expect(r.headers.location).toBe("/login");
 		});
@@ -235,7 +235,7 @@ describe("Hardening", () => {
 		});
 
 		it("rejects POST with a foreign Origin", async () => {
-			const r = await supertest(app)
+			const r = await request(app)
 				.post("/login")
 				.set("Origin", "https://evil.example.com")
 				.send({ email: "x@example.com", password: "password123" });
@@ -243,7 +243,7 @@ describe("Hardening", () => {
 		});
 
 		it("rejects POST with a foreign Referer when Origin is absent", async () => {
-			const r = await supertest(app)
+			const r = await request(app)
 				.post("/login")
 				.set("Referer", "https://evil.example.com/whatever")
 				.send({ email: "x@example.com", password: "password123" });
@@ -251,7 +251,7 @@ describe("Hardening", () => {
 		});
 
 		it("rejects POST with a malformed Origin", async () => {
-			const r = await supertest(app)
+			const r = await request(app)
 				.post("/login")
 				.set("Origin", "not-a-url")
 				.send({ email: "x@example.com", password: "password123" });
@@ -259,7 +259,7 @@ describe("Hardening", () => {
 		});
 
 		it("allows POST with a matching Origin", async () => {
-			const r = await supertest(app)
+			const r = await request(app)
 				.post("/login")
 				.set("Origin", "http://localhost:3000")
 				.send({ email: "x@example.com", password: "password123" });
@@ -268,14 +268,14 @@ describe("Hardening", () => {
 		});
 
 		it("allows POST when neither Origin nor Referer is present", async () => {
-			const r = await supertest(app)
+			const r = await request(app)
 				.post("/login")
 				.send({ email: "x@example.com", password: "password123" });
 			expect(r.status).not.toBe(403);
 		});
 
 		it("allows GET regardless of Origin", async () => {
-			const r = await supertest(app)
+			const r = await request(app)
 				.get("/login")
 				.set("Origin", "https://evil.example.com");
 			expect(r.status).toBe(200);

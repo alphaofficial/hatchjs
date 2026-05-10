@@ -1,7 +1,6 @@
 import session from "express-session";
 import variables from "../../src/config/variables";
 import { PinoLogger } from "../../src/logger/pinoLogger";
-import { mock } from "jest-mock-extended";
 import { MikroORM, RequestContext } from "@mikro-orm/core";
 import ormConfig from "../../src/database/orm.config";
 import { SessionStore, generateSessionToken } from "../../src/middleware/sessionStore";
@@ -27,11 +26,15 @@ declare module "express-serve-static-core" {
 	}
 }
 
-export const bootstrapTestApp = async () => {
-	const log = mock<PinoLogger>();
+interface BootstrapTestAppOptions {
+	dbName?: string;
+}
+
+export const bootstrapTestApp = async (options: BootstrapTestAppOptions = {}) => {
+	const log = PinoLogger;
 	const app = express();
 
-	const orm = await MikroORM.init({ ...ormConfig, dbName: "express_inertia_test.db" });
+	const orm = await MikroORM.init({ ...ormConfig, dbName: options.dbName ?? "express_inertia_test.db" });
 	const sessionStore = new SessionStore(orm);
 
 	app.use(helmet({ contentSecurityPolicy: false }));

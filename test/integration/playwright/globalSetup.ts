@@ -11,7 +11,7 @@ export default async function globalSetup() {
 	// Run migrations
 	const script = path.join(__dirname, "migrate.ts");
 	execSync(
-		`DB_PATH=express_inertia_e2e.db NODE_ENV=test tsx ${script}`,
+		`DB_PATH=express_inertia_e2e.db NODE_ENV=test node --import tsx ${script}`,
 		{ cwd: root, stdio: "inherit" }
 	);
 }
