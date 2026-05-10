@@ -1,5 +1,5 @@
 import type { AppEvents } from '@/core/events/AppEvents';
-import { Emitter } from '@/lib/events';
+import { Emitter } from '@/adapters/shared/events';
 
 describe('event bus', () => {
     afterEach(() => {

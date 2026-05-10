@@ -7,7 +7,7 @@ import { ResendVerification } from '@/core/use-cases/ResendVerification';
 import { ResetPassword } from '@/core/use-cases/ResetPassword';
 import { VerifyEmail } from '@/core/use-cases/VerifyEmail';
 import { Mailer } from '@/lib/mail';
-import { Emitter } from '@/lib/events';
+import { Emitter } from '@/adapters/shared/events';
 import { z } from 'zod';
 import crypto from 'crypto';
 import variables from '@/config/variables';
