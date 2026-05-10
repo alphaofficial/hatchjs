@@ -1,33 +1,46 @@
 import 'dotenv-defaults/config';
-import { Queue } from './adapters/outbound/queue/graphileWorker';
-import { sendWelcomeEmail } from './adapters/inbound/jobs/sendWelcomeEmail';
-import { PinoLogger } from './adapters/shared/logger/pinoLogger';
+import type { Runner } from 'graphile-worker';
+import { Queue } from '@/adapters/outbound/queue/graphileWorker';
+import { sendWelcomeEmail } from '@/adapters/inbound/jobs/sendWelcomeEmail';
+import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-	PinoLogger.error({ scope: 'worker', message: 'DATABASE_URL is not set. Worker requires a PostgreSQL connection.' });
-	process.exit(1);
-}
-
-const taskList = {
+export const taskList = {
 	sendWelcomeEmail,
 };
 
-PinoLogger.info({ scope: 'worker', message: 'Starting Graphile Worker...' });
+function registerShutdown(runner: Runner): void {
+	const shutdown = async () => {
+		PinoLogger.info({ scope: 'worker', message: 'Shutting down worker...' });
+		await runner.stop();
+		process.exit(0);
+	};
 
-Queue.start(connectionString, taskList)
-	.then(runner => {
-		PinoLogger.info({ scope: 'worker', message: 'Worker started and listening for jobs.' });
-		const shutdown = async () => {
-			PinoLogger.info({ scope: 'worker', message: 'Shutting down worker...' });
-			await runner.stop();
-			process.exit(0);
-		};
-		process.on('SIGTERM', shutdown);
-		process.on('SIGINT', shutdown);
-	})
-	.catch(err => {
-		PinoLogger.error({ scope: 'worker', message: 'Worker failed to start', params: { error: err } });
+	process.on('SIGTERM', shutdown);
+	process.on('SIGINT', shutdown);
+}
+
+export async function startWorker(connectionString = process.env.DATABASE_URL): Promise<Runner> {
+	if (!connectionString) {
+		throw new Error('DATABASE_URL is not set. Worker requires a PostgreSQL connection.');
+	}
+
+	PinoLogger.info({ scope: 'worker', message: 'Starting Graphile Worker...' });
+
+	const runner = await Queue.start(connectionString, taskList);
+
+	PinoLogger.info({ scope: 'worker', message: 'Worker started and listening for jobs.' });
+	registerShutdown(runner);
+
+	return runner;
+}
+
+if (require.main === module) {
+	startWorker().catch(err => {
+		if (err instanceof Error && err.message === 'DATABASE_URL is not set. Worker requires a PostgreSQL connection.') {
+			PinoLogger.error({ scope: 'worker', message: err.message });
+		} else {
+			PinoLogger.error({ scope: 'worker', message: 'Worker failed to start', params: { error: err } });
+		}
 		process.exit(1);
 	});
+}

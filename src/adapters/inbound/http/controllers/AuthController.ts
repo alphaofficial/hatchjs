@@ -227,15 +227,15 @@ export class AuthController {
     };
 
     verifyEmail = async (req: Request, res: Response) => {
-        const { status, payload } = this.readVerificationToken(req.params.token);
+        const tokenResult = this.readVerificationToken(req.params.token);
 
-        if (status === 'invalid') {
+        if (tokenResult.status === 'invalid') {
             return this.render(req, res, 'Auth/VerifyEmail', {
                 errors: { email: ['This verification link is invalid.'] }
             });
         }
 
-        if (status === 'expired') {
+        if (tokenResult.status === 'expired') {
             const user = await req.user();
             return this.render(req, res, 'Auth/VerifyEmail', {
                 email: user?.email,
@@ -244,8 +244,8 @@ export class AuthController {
         }
 
         const result = await this.verifyEmailUseCase.execute({
-            id: payload.id,
-            email: payload.email,
+            id: tokenResult.payload.id,
+            email: tokenResult.payload.email,
         });
 
         if (result.status === 'invalid_user') {
