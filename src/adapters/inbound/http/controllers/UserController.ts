@@ -18,8 +18,8 @@ export class UserController {
 		return new BaseController(req, res).render('Users', { users: this.userDirectory });
 	};
 
-	show = async (req: Request, res: Response) => {
-		const user = this.userDirectory.find((u: User) => u.id === parseInt(req.params.id));
+	show = async (req: Request<{ id: string }>, res: Response) => {
+		const user = this.userDirectory.find((u: User) => u.id === parseInt(req.params.id, 10));
 
 		if (!user) {
 			return res.status(404).json({ error: 'User not found' });

@@ -225,7 +225,7 @@ DOCKER
 fi
 
 # --- replace marketing landing with a minimal starter Home -----------------
-cat > src/views/pages/Home.tsx <<'TSX'
+cat > src/adapters/inbound/http/views/pages/Home.tsx <<'TSX'
 import { Head, Link } from '@inertiajs/react';
 
 interface Props {
@@ -306,7 +306,7 @@ export default function Home({ applicationName, isAuthenticated }: Props) {
 						))}
 					</div>
 					<p className="mt-12 text-sm text-gray-500">
-						Edit <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">src/views/pages/Home.tsx</code> and save to reload.
+						Edit <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">src/adapters/inbound/http/views/pages/Home.tsx</code> and save to reload.
 					</p>
 				</main>
 			</div>

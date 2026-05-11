@@ -134,7 +134,7 @@ function makeLineStream(tag: Tag) {
 type Proc = { tag: Tag; cmd: string; args: string[] }
 
 const procs: Proc[] = [
-  { tag: 'pages', cmd: 'npx', args: ['chokidar', 'src/views/pages/**/*.tsx', '-c', 'npm run pages:generate --silent', '--initial', '--silent'] },
+  { tag: 'pages', cmd: 'npx', args: ['chokidar', 'src/adapters/inbound/http/views/pages/**/*.tsx', '-c', 'npm run pages:generate --silent', '--initial', '--silent'] },
   { tag: 'server', cmd: 'npx', args: ['nodemon', '--quiet', '--exec', 'tsx src/index.ts'] },
   { tag: 'client', cmd: 'npx', args: ['vite', 'build', '--watch'] },
 ]

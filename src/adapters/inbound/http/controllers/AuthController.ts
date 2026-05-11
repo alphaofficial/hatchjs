@@ -184,7 +184,7 @@ export class AuthController {
         }
     };
 
-    showResetPassword = async (req: Request, res: Response) => {
+    showResetPassword = async (req: Request<{ token: string }>, res: Response) => {
         return this.render(req, res, 'Auth/ResetPassword', {
             token: req.params.token,
             email: req.query.email as string ?? ''
@@ -226,7 +226,7 @@ export class AuthController {
         return this.render(req, res, 'Auth/VerifyEmail', { email: user?.email });
     };
 
-    verifyEmail = async (req: Request, res: Response) => {
+    verifyEmail = async (req: Request<{ token: string }>, res: Response) => {
         const tokenResult = this.readVerificationToken(req.params.token);
 
         if (tokenResult.status === 'invalid') {
