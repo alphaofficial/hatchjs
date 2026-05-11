@@ -8,19 +8,17 @@ import { auth, guest } from '@/adapters/inbound/http/middleware/auth';
 import { authRateLimit, featureRateLimit } from '@/adapters/inbound/http/middleware/rateLimit';
 
 interface RouteControllers {
-    publicController: PublicController;
-    aboutController: AboutController;
-    userController: UserController;
     authController: AuthController;
 }
 
 export function createRoutes({
-    publicController,
-    aboutController,
-    userController,
     authController,
 }: RouteControllers) {
     const route = Router();
+
+    const publicController = new PublicController();
+    const aboutController = new AboutController();
+    const userController = new UserController();
 
     // Apply Inertia middleware to all routes
     route.use(InertiaExpressMiddleware.apply);

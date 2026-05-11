@@ -19,3 +19,4 @@ playwright-report/
 *.db
 *.db*
 *.log*
+tmp/

@@ -101,12 +101,31 @@ describe("scaffold.sh", () => {
 			expect(routes).toContain(
 				"import { PostsController } from '@/adapters/inbound/http/controllers/PostsController';",
 			);
-			expect(routes).toContain("postsController: PostsController;");
-			expect(routes).toContain("postsController,");
+			expect(routes).toContain("const postsController = new PostsController();");
 			expect(routes).toContain("route.get('/posts', postsController.index);");
 			expect(routes.indexOf("route.get('/posts'")).toBeLessThan(
 				routes.indexOf("return route;"),
 			);
+		});
+
+		it("generates installed app pages with the landing theme and fresh-start copy", () => {
+			run(dir, "page Posts");
+
+			const page = read(dir, "src/adapters/inbound/http/views/pages/Posts.tsx");
+			expect(page).toContain("import { Head, Link } from '@inertiajs/react';");
+			expect(page).toContain('bg-white font-display text-slate-900 antialiased');
+			expect(page).toContain('sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-lg');
+			expect(page).toContain('mx-auto max-w-6xl px-5 pb-16 pt-20 text-center');
+			expect(page).toContain('Build something <span className="text-rose-500">quietly excellent.</span>');
+			expect(page).toContain('id="features"');
+			expect(page).toContain('id="how"');
+			expect(page).toContain('npm run dev');
+			expect(page).not.toContain("import Home from './Home';");
+			expect(page).not.toContain('landingVariant="installed"');
+			expect(page).not.toContain('Fresh start');
+			expect(page).not.toContain('installed.');
+			expect(page).not.toContain('min-h-screen bg-gray-50');
+			expect(page).not.toContain('Edit <code>');
 		});
 
 		it("supports nested pages", () => {
@@ -116,6 +135,7 @@ describe("scaffold.sh", () => {
 				existsSync(join(dir, "src/adapters/inbound/http/views/pages/Auth/Profile.tsx")),
 			).toBe(true);
 			const page = read(dir, "src/adapters/inbound/http/views/pages/Auth/Profile.tsx");
+			expect(page).toContain("import { Head, Link } from '@inertiajs/react';");
 			expect(page).toContain("export default function Profile");
 			expect(read(dir, "src/adapters/inbound/http/routes/route.ts")).toContain(
 				"route.get('/profile', profileController.index);",

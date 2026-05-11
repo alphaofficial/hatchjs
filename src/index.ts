@@ -223,9 +223,6 @@ export function createHttpApp(orm: MikroORM): { app: Express; sessionStore: Sess
 
   const routes = createRoutes({
     authController,
-    publicController: new PublicController(),
-    aboutController: new AboutController(),
-    userController: new UserController(),
   });
 
   app.locals.cacheDriver = cacheDriver;
