@@ -286,7 +286,7 @@ describe("scaffold.sh", () => {
 			expect(src).toContain(
 				"import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';",
 			);
-			expect(src).toContain("interface SendWelcomeEmailPayload");
+			expect(src).toContain("interface SendWelcomeEmailPayload extends Record<string, unknown>");
 			expect(src).toContain("export async function sendWelcomeEmail(payload: unknown)");
 		});
 

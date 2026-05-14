@@ -497,7 +497,7 @@ make_job() {
 	cat > "$file" <<TS
 import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
 
-interface ${name}Payload {
+interface ${name}Payload extends Record<string, unknown> {
 	// add your payload fields here
 }
 
