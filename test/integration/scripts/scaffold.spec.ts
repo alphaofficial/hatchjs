@@ -15,28 +15,37 @@ import { join } from "node:path";
 const REPO_ROOT = join(__dirname, "..", "..", "..");
 const SCAFFOLD_SRC = join(REPO_ROOT, "scripts", "scaffold.sh");
 
-// Minimal route.ts seed: scaffold.sh inserts routes above `export default route;`
+// Minimal route.ts seed for the createRoutes composition pattern.
 const ROUTE_SEED = `import { Router } from 'express';
-import { auth, guest } from '../middleware/auth';
+import { auth, guest } from '@/adapters/inbound/http/middleware/auth';
 
-const route = Router();
+interface RouteControllers {
+}
 
-export default route;
+export function createRoutes({
+}: RouteControllers) {
+	const route = Router();
+
+	return route;
+}
 `;
 
 function sandbox(): string {
 	const dir = mkdtempSync(join(tmpdir(), "tba-scaffold-"));
 	mkdirSync(join(dir, "scripts"), { recursive: true });
-	mkdirSync(join(dir, "src", "controllers"), { recursive: true });
-	mkdirSync(join(dir, "src", "routes"), { recursive: true });
-	mkdirSync(join(dir, "src", "views", "pages"), { recursive: true });
-	mkdirSync(join(dir, "src", "models"), { recursive: true });
-	mkdirSync(join(dir, "src", "database", "mappings"), { recursive: true });
-	mkdirSync(join(dir, "src", "jobs"), { recursive: true });
-	mkdirSync(join(dir, "src", "mail", "templates"), { recursive: true });
-	mkdirSync(join(dir, "src", "listeners"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "inbound", "http", "controllers"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "inbound", "http", "routes"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "inbound", "http", "views", "pages"), { recursive: true });
+	mkdirSync(join(dir, "src", "core", "models"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "outbound", "persistence", "mappings"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "inbound", "jobs"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "outbound", "mail", "templates"), { recursive: true });
+	mkdirSync(join(dir, "src", "adapters", "shared", "listeners"), { recursive: true });
 	copyFileSync(SCAFFOLD_SRC, join(dir, "scripts", "scaffold.sh"));
-	writeFileSync(join(dir, "src", "routes", "route.ts"), ROUTE_SEED);
+	writeFileSync(
+		join(dir, "src", "adapters", "inbound", "http", "routes", "route.ts"),
+		ROUTE_SEED,
+	);
 	// Symlink node_modules so dynamic imports of generated mapping files can
 	// resolve @mikro-orm/* when the round-trip test needs it.
 	symlinkSync(join(REPO_ROOT, "node_modules"), join(dir, "node_modules"));
@@ -69,55 +78,104 @@ describe("scaffold.sh", () => {
 		it("creates controller, page, and route", () => {
 			run(dir, "page Posts");
 
-			expect(existsSync(join(dir, "src/controllers/PostsController.ts"))).toBe(true);
-			expect(existsSync(join(dir, "src/views/pages/Posts.tsx"))).toBe(true);
+			expect(
+				existsSync(
+					join(dir, "src/adapters/inbound/http/controllers/PostsController.ts"),
+				),
+			).toBe(true);
+			expect(
+				existsSync(join(dir, "src/adapters/inbound/http/views/pages/Posts.tsx")),
+			).toBe(true);
 
-			const ctrl = read(dir, "src/controllers/PostsController.ts");
-			expect(ctrl).toContain("export class PostsController extends BaseController");
-			expect(ctrl).toContain("'Posts'");
+			const ctrl = read(
+				dir,
+				"src/adapters/inbound/http/controllers/PostsController.ts",
+			);
+			expect(ctrl).toContain("export class PostsController");
+			expect(ctrl).toContain(
+				"import { BaseController } from '@/adapters/inbound/http/controllers/BaseController';",
+			);
+			expect(ctrl).toContain("new BaseController(req, res).render('Posts'");
 
-			const routes = read(dir, "src/routes/route.ts");
+			const routes = read(dir, "src/adapters/inbound/http/routes/route.ts");
 			expect(routes).toContain(
-				"import { PostsController } from '../controllers/PostsController';",
+				"import { PostsController } from '@/adapters/inbound/http/controllers/PostsController';",
 			);
-			expect(routes).toContain("route.get('/posts', PostsController.index);");
-			// Inserted above the export
+			expect(routes).toContain("const postsController = new PostsController();");
+			expect(routes).toContain("route.get('/posts', postsController.index);");
 			expect(routes.indexOf("route.get('/posts'")).toBeLessThan(
-				routes.indexOf("export default route;"),
+				routes.indexOf("return route;"),
 			);
+		});
+
+		it("generates installed app pages with the landing theme and fresh-start copy", () => {
+			run(dir, "page Posts");
+
+			const page = read(dir, "src/adapters/inbound/http/views/pages/Posts.tsx");
+			expect(page).toContain("import { Head, Link } from '@inertiajs/react';");
+			expect(page).toContain('bg-white font-display text-slate-900 antialiased');
+			expect(page).toContain('sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-lg');
+			expect(page).toContain('mx-auto max-w-6xl px-5 pb-16 pt-20 text-center');
+			expect(page).toContain('Build something <span className="text-rose-500">quietly excellent.</span>');
+			expect(page).toContain('id="features"');
+			expect(page).toContain('id="how"');
+			expect(page).toContain('npm run dev');
+			expect(page).not.toContain("import Home from './Home';");
+			expect(page).not.toContain('landingVariant="installed"');
+			expect(page).not.toContain('Fresh start');
+			expect(page).not.toContain('installed.');
+			expect(page).not.toContain('min-h-screen bg-gray-50');
+			expect(page).not.toContain('Edit <code>');
 		});
 
 		it("supports nested pages", () => {
 			run(dir, "page Auth/Profile /profile");
 
-			expect(existsSync(join(dir, "src/views/pages/Auth/Profile.tsx"))).toBe(true);
-			const page = read(dir, "src/views/pages/Auth/Profile.tsx");
+			expect(
+				existsSync(join(dir, "src/adapters/inbound/http/views/pages/Auth/Profile.tsx")),
+			).toBe(true);
+			const page = read(dir, "src/adapters/inbound/http/views/pages/Auth/Profile.tsx");
+			expect(page).toContain("import { Head, Link } from '@inertiajs/react';");
 			expect(page).toContain("export default function Profile");
-			expect(read(dir, "src/routes/route.ts")).toContain(
-				"route.get('/profile', ProfileController.index);",
+			expect(read(dir, "src/adapters/inbound/http/routes/route.ts")).toContain(
+				"route.get('/profile', profileController.index);",
 			);
 		});
 
 		it("is idempotent — second run does not mutate files", () => {
 			run(dir, "page Posts");
 			const before = {
-				ctrl: read(dir, "src/controllers/PostsController.ts"),
-				page: read(dir, "src/views/pages/Posts.tsx"),
-				routes: read(dir, "src/routes/route.ts"),
+				ctrl: read(dir, "src/adapters/inbound/http/controllers/PostsController.ts"),
+				page: read(dir, "src/adapters/inbound/http/views/pages/Posts.tsx"),
+				routes: read(dir, "src/adapters/inbound/http/routes/route.ts"),
 			};
 			run(dir, "page Posts");
-			expect(read(dir, "src/controllers/PostsController.ts")).toBe(before.ctrl);
-			expect(read(dir, "src/views/pages/Posts.tsx")).toBe(before.page);
-			expect(read(dir, "src/routes/route.ts")).toBe(before.routes);
+			expect(read(dir, "src/adapters/inbound/http/controllers/PostsController.ts")).toBe(
+				before.ctrl,
+			);
+			expect(read(dir, "src/adapters/inbound/http/views/pages/Posts.tsx")).toBe(
+				before.page,
+			);
+			expect(read(dir, "src/adapters/inbound/http/routes/route.ts")).toBe(
+				before.routes,
+			);
 		});
 	});
 
 	describe("controller", () => {
 		it("creates controller only", () => {
 			run(dir, "controller Billing");
-			expect(existsSync(join(dir, "src/controllers/BillingController.ts"))).toBe(true);
-			expect(existsSync(join(dir, "src/views/pages/Billing.tsx"))).toBe(false);
-			expect(read(dir, "src/routes/route.ts")).not.toContain("Billing");
+			expect(
+				existsSync(
+					join(dir, "src/adapters/inbound/http/controllers/BillingController.ts"),
+				),
+			).toBe(true);
+			expect(
+				existsSync(join(dir, "src/adapters/inbound/http/views/pages/Billing.tsx")),
+			).toBe(false);
+			expect(read(dir, "src/adapters/inbound/http/routes/route.ts")).not.toContain(
+				"Billing",
+			);
 		});
 	});
 
@@ -127,14 +185,16 @@ describe("scaffold.sh", () => {
 			run(dir, "route get /health Public.health");
 			run(dir, "route get /ping Public.ping");
 
-			const routes = read(dir, "src/routes/route.ts");
-			// import line contains PublicController twice (named + module path),
-			// plus two route references = 4 total occurrences, one import line.
+			const routes = read(dir, "src/adapters/inbound/http/routes/route.ts");
 			expect(
-				(routes.match(/^import \{ PublicController \}/gm) ?? []).length,
+				(
+					routes.match(
+						/^import \{ PublicController \} from '@\/adapters\/inbound\/http\/controllers\/PublicController';$/gm,
+					) ?? []
+				).length,
 			).toBe(1);
-			expect(routes).toContain("route.get('/health', PublicController.health);");
-			expect(routes).toContain("route.get('/ping', PublicController.ping);");
+			expect(routes).toContain("route.get('/health', publicController.health);");
+			expect(routes).toContain("route.get('/ping', publicController.ping);");
 		});
 
 		it("supports --auth and --guest guards", () => {
@@ -142,9 +202,9 @@ describe("scaffold.sh", () => {
 			run(dir, "route post /posts Posts.create --auth");
 			run(dir, "route get /login Auth.show --guest");
 
-			const routes = read(dir, "src/routes/route.ts");
-			expect(routes).toContain("route.post('/posts', auth, PostsController.create);");
-			expect(routes).toContain("route.get('/login', guest, AuthController.show);");
+			const routes = read(dir, "src/adapters/inbound/http/routes/route.ts");
+			expect(routes).toContain("route.post('/posts', auth, postsController.create);");
+			expect(routes).toContain("route.get('/login', guest, authController.show);");
 		});
 	});
 
@@ -152,12 +212,13 @@ describe("scaffold.sh", () => {
 		it("creates a stub model and mapping when no fields given", () => {
 			run(dir, "model Post");
 
-			const model = read(dir, "src/models/Post.ts");
+			const model = read(dir, "src/core/models/Post.ts");
 			expect(model).toContain("export class Post");
 			expect(model).toContain("id!: string;");
 			expect(model).toContain("createdAt: Date = new Date();");
 
-			const mapping = read(dir, "src/database/mappings/post.map.ts");
+			const mapping = read(dir, "src/adapters/outbound/persistence/mappings/post.map.ts");
+			expect(mapping).toContain('import { Post } from "@/core/models/Post";');
 			expect(mapping).toContain("export const PostMapper = new EntitySchema<Post>");
 			expect(mapping).toContain('tableName: "posts"');
 			expect(mapping).toContain('id: { type: "string", primary: true }');
@@ -169,14 +230,14 @@ describe("scaffold.sh", () => {
 				`model Post --fields "title:string,body:text,views:int,published:bool,publishedAt:datetime?"`,
 			);
 
-			const model = read(dir, "src/models/Post.ts");
+			const model = read(dir, "src/core/models/Post.ts");
 			expect(model).toContain("title!: string;");
 			expect(model).toContain("body!: string;");
 			expect(model).toContain("views!: number;");
 			expect(model).toContain("published!: boolean;");
 			expect(model).toContain("publishedAt?: Date;");
 
-			const mapping = read(dir, "src/database/mappings/post.map.ts");
+			const mapping = read(dir, "src/adapters/outbound/persistence/mappings/post.map.ts");
 			expect(mapping).toContain('title: { type: "string" }');
 			expect(mapping).toContain('body: { type: "text" }');
 			expect(mapping).toContain('views: { type: "number" }');
@@ -195,12 +256,20 @@ describe("scaffold.sh", () => {
 		it("generates page + controller + route + model + mapping", () => {
 			run(dir, `page Post --model --fields "title:string,body:text"`);
 
-			expect(existsSync(join(dir, "src/controllers/PostController.ts"))).toBe(true);
-			expect(existsSync(join(dir, "src/views/pages/Post.tsx"))).toBe(true);
-			expect(existsSync(join(dir, "src/models/Post.ts"))).toBe(true);
-			expect(existsSync(join(dir, "src/database/mappings/post.map.ts"))).toBe(true);
+			expect(
+				existsSync(join(dir, "src/adapters/inbound/http/controllers/PostController.ts")),
+			).toBe(true);
+			expect(
+				existsSync(join(dir, "src/adapters/inbound/http/views/pages/Post.tsx")),
+			).toBe(true);
+			expect(existsSync(join(dir, "src/core/models/Post.ts"))).toBe(true);
+			expect(
+				existsSync(
+					join(dir, "src/adapters/outbound/persistence/mappings/post.map.ts"),
+				),
+			).toBe(true);
 
-			const mapping = read(dir, "src/database/mappings/post.map.ts");
+			const mapping = read(dir, "src/adapters/outbound/persistence/mappings/post.map.ts");
 			expect(mapping).toContain('title: { type: "string" }');
 			expect(mapping).toContain('body: { type: "text" }');
 		});
@@ -210,19 +279,22 @@ describe("scaffold.sh", () => {
 		it("creates a job handler file", () => {
 			run(dir, "job SendWelcomeEmail");
 
-			const file = join(dir, "src/jobs/sendWelcomeEmail.ts");
+			const file = join(dir, "src/adapters/inbound/jobs/sendWelcomeEmail.ts");
 			expect(existsSync(file)).toBe(true);
 
-			const src = read(dir, "src/jobs/sendWelcomeEmail.ts");
-			expect(src).toContain("interface SendWelcomeEmailPayload");
+			const src = read(dir, "src/adapters/inbound/jobs/sendWelcomeEmail.ts");
+			expect(src).toContain(
+				"import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';",
+			);
+			expect(src).toContain("interface SendWelcomeEmailPayload extends Record<string, unknown>");
 			expect(src).toContain("export async function sendWelcomeEmail(payload: unknown)");
 		});
 
 		it("is idempotent — second run does not overwrite", () => {
 			run(dir, "job ProcessOrder");
-			const before = read(dir, "src/jobs/processOrder.ts");
+			const before = read(dir, "src/adapters/inbound/jobs/processOrder.ts");
 			run(dir, "job ProcessOrder");
-			expect(read(dir, "src/jobs/processOrder.ts")).toBe(before);
+			expect(read(dir, "src/adapters/inbound/jobs/processOrder.ts")).toBe(before);
 		});
 	});
 
@@ -230,19 +302,21 @@ describe("scaffold.sh", () => {
 		it("creates a mail template file", () => {
 			run(dir, "mail OrderConfirmation");
 
-			const file = join(dir, "src/mail/templates/OrderConfirmation.ts");
+			const file = join(dir, "src/adapters/outbound/mail/templates/OrderConfirmation.ts");
 			expect(existsSync(file)).toBe(true);
 
-			const src = read(dir, "src/mail/templates/OrderConfirmation.ts");
+			const src = read(dir, "src/adapters/outbound/mail/templates/OrderConfirmation.ts");
 			expect(src).toContain("interface OrderConfirmationData");
 			expect(src).toContain("export function OrderConfirmation(");
 		});
 
 		it("is idempotent — second run does not overwrite", () => {
 			run(dir, "mail ResetPassword");
-			const before = read(dir, "src/mail/templates/ResetPassword.ts");
+			const before = read(dir, "src/adapters/outbound/mail/templates/ResetPassword.ts");
 			run(dir, "mail ResetPassword");
-			expect(read(dir, "src/mail/templates/ResetPassword.ts")).toBe(before);
+			expect(read(dir, "src/adapters/outbound/mail/templates/ResetPassword.ts")).toBe(
+				before,
+			);
 		});
 	});
 
@@ -250,19 +324,23 @@ describe("scaffold.sh", () => {
 		it("creates a listener file", () => {
 			run(dir, "event UserSubscribed");
 
-			const file = join(dir, "src/listeners/userSubscribed.ts");
+			const file = join(dir, "src/adapters/shared/listeners/userSubscribed.ts");
 			expect(existsSync(file)).toBe(true);
 
-			const src = read(dir, "src/listeners/userSubscribed.ts");
-			expect(src).toContain("emitter.on(");
+			const src = read(dir, "src/adapters/shared/listeners/userSubscribed.ts");
+			expect(src).toContain("import type { AppEvents } from '@/core/events/AppEvents';");
+			expect(src).toContain("import { Emitter } from '@/adapters/shared/events';");
+			expect(src).toContain("Emitter.on(");
 			expect(src).toContain("UserSubscribed");
 		});
 
 		it("is idempotent — second run does not overwrite", () => {
 			run(dir, "event UserUnsubscribed");
-			const before = read(dir, "src/listeners/userUnsubscribed.ts");
+			const before = read(dir, "src/adapters/shared/listeners/userUnsubscribed.ts");
 			run(dir, "event UserUnsubscribed");
-			expect(read(dir, "src/listeners/userUnsubscribed.ts")).toBe(before);
+			expect(read(dir, "src/adapters/shared/listeners/userUnsubscribed.ts")).toBe(
+				before,
+			);
 		});
 	});
 
@@ -273,11 +351,14 @@ describe("scaffold.sh", () => {
 				`model Post --fields "title:string,body:text,publishedAt:datetime?"`,
 			);
 
-			// Rewrite `@/models/Post` alias to a relative import so jest can resolve it
+			// Rewrite `@/core/models/Post` alias to a relative import so jest can resolve it
 			// without the project's moduleNameMapper pointing at the real src tree.
-			const mappingPath = join(dir, "src/database/mappings/post.map.ts");
+			const mappingPath = join(
+				dir,
+				"src/adapters/outbound/persistence/mappings/post.map.ts",
+			);
 			const mappingSrc = readFileSync(mappingPath, "utf8")
-				.replace(`from "@/models/Post"`, `from "../../models/Post.ts"`)
+				.replace(`from "@/core/models/Post"`, `from "../../../../core/models/Post.ts"`)
 				.replace(`from "@mikro-orm/postgresql"`, `from "@mikro-orm/sqlite"`);
 			writeFileSync(mappingPath, mappingSrc);
 
@@ -302,7 +383,7 @@ describe("scaffold.sh", () => {
 					: never;
 			};
 			const modelModule = (await import(
-				join(dir, "src/models/Post.ts")
+				join(dir, "src/core/models/Post.ts")
 			)) as { Post: PostCtor };
 			const Post = modelModule.Post;
 

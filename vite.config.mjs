@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
       outDir: 'public',
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
-        input: resolve(__dirname, 'src/views/main.tsx'),
+        input: resolve(__dirname, 'src/adapters/inbound/http/views/main.tsx'),
         output: {
           entryFileNames: 'app.js',
           chunkFileNames: '[name].js',

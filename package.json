@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently --names \"pages,server,client,ssr\" --prefix-colors \"yellow,cyan,magenta,blue\" \"npm run pages:watch\" \"npm run dev:server\" \"npm run dev:client\" \"npm run dev:ssr\"",
-    "dev:server": "nodemon --exec tsx src/index.ts",
+    "dev:server": "nodemon --watch src --ext ts,json --exec \"node --import tsx\" src/index.ts",
     "dev:client": "vite build --watch",
     "dev:ssr": "vite build --config vite.ssr.config.mjs --watch",
     "scaffold": "bash scripts/scaffold.sh",
-    "pages:generate": "tsx scripts/generate-pages.ts",
-    "pages:watch": "chokidar \"src/views/pages/**/*.tsx\" -c \"npm run pages:generate\" --initial",
+    "pages:generate": "node --import tsx scripts/generate-pages.ts",
+    "pages:watch": "chokidar \"src/adapters/inbound/http/views/pages/**/*.tsx\" -c \"npm run pages:generate\" --initial",
     "predev": "npm run pages:generate && npm run build:ssr",
     "prebuild": "npm run pages:generate",
     "build": "npm run build:client && npm run build:ssr && npm run build:server",
@@ -27,8 +27,8 @@
     "migration:status": "mikro-orm migration:check",
     "migrate": "npm run migration:create && npm run migration:run",
     "db:seed": "mikro-orm seeder:run",
-    "work": "tsx src/worker.ts",
-    "scheduler": "tsx src/scheduler.ts"
+    "work": "node --import tsx scripts/run-worker.ts",
+    "scheduler": "node --import tsx src/scheduler.ts"
   },
   "keywords": [],
   "author": "",
@@ -92,8 +92,8 @@
   },
   "mikro-orm": {
     "configPaths": [
-      "./src/database/orm.config.ts",
-      "./dist/database/orm.config.js"
+      "./src/adapters/outbound/persistence/orm.config.ts",
+      "./dist/adapters/outbound/persistence/orm.config.js"
     ]
   }
 }

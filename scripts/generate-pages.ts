@@ -1,16 +1,17 @@
 // Codegen for src/config/pages.ts
 //
-// Walks src/views/pages/**/*.tsx and writes a literal-union type of
+// Walks src/adapters/inbound/http/views/pages/**/*.tsx and writes a literal-union type of
 // every page name. Run on `predev` and `prebuild` and watched while
 // `npm run dev` is running so adding a page never requires editing
 // pages.ts by hand.
 //
-// Names preserve subdirectories: src/views/pages/Auth/Login.tsx -> "Auth/Login".
+// Names preserve subdirectories:
+// src/adapters/inbound/http/views/pages/Auth/Login.tsx -> "Auth/Login".
 
 import { readdirSync, statSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
-const PAGES_DIR = join(process.cwd(), 'src', 'views', 'pages');
+const PAGES_DIR = join(process.cwd(), 'src', 'adapters', 'inbound', 'http', 'views', 'pages');
 const OUT_FILE = join(process.cwd(), 'src', 'config', 'pages.ts');
 
 function walk(dir: string): string[] {

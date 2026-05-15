@@ -1,10 +1,10 @@
-import supertest from "supertest";
 import crypto from "crypto";
+import { PasswordReset } from "@/core/models/PasswordReset";
+import { User } from "@/core/models/User";
+import variables from "@/config/variables";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
-import { User } from "../../../src/models/User";
-import { PasswordReset } from "../../../src/models/PasswordReset";
-import variables from "../../../src/config/variables";
+import { agent, request } from "../http";
 
 function extractInertiaPageData(html: string): any {
 	const match = html.match(/data-page="([^"]+)"/);
@@ -59,12 +59,129 @@ describe("Auth Flows Integration Tests", () => {
 		await database?.close(true);
 	});
 
+	// ─── Register ───────────────────────────────────────────────────────────────
+
+	describe("Register", () => {
+		describe("GET /register", () => {
+			it("renders the register page", async () => {
+				const response = await request(app).get("/register");
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Register");
+			});
+		});
+
+		describe("POST /register", () => {
+			it("creates a user, persists a hashed password, and redirects to /verify-email", async () => {
+				const response = await request(app)
+					.post("/register")
+					.send({
+						name: "New User",
+						email: "newuser@example.com",
+						password: "password123",
+						password_confirmation: "password123",
+					});
+
+				expect(response.status).toBe(302);
+				expect(response.headers.location).toBe("/verify-email");
+
+				const em = database.em.fork();
+				const created = await em.findOne(User, { email: "newuser@example.com" });
+				expect(created).not.toBeNull();
+				expect(created?.name).toBe("New User");
+				expect(created?.password).not.toBe("password123");
+				expect(created?.emailVerifiedAt ?? null).toBeNull();
+			});
+
+			it("rejects registration when the email is already taken", async () => {
+				await testDataFactory.createUser({ email: "taken@example.com" });
+
+				const response = await request(app)
+					.post("/register")
+					.send({
+						name: "Another",
+						email: "taken@example.com",
+						password: "password123",
+						password_confirmation: "password123",
+					});
+
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Register");
+				expect(pageData.props.errors.email).toBeDefined();
+			});
+
+			it("returns a validation error when passwords do not match", async () => {
+				const response = await request(app)
+					.post("/register")
+					.send({
+						name: "Mismatch",
+						email: "mismatch@example.com",
+						password: "password123",
+						password_confirmation: "different123",
+					});
+
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Register");
+				expect(pageData.props.errors.password_confirmation).toBeDefined();
+			});
+		});
+	});
+
+	// ─── Login ──────────────────────────────────────────────────────────────────
+
+	describe("Login", () => {
+		describe("GET /login", () => {
+			it("renders the login page", async () => {
+				const response = await request(app).get("/login");
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Login");
+			});
+
+			it("includes a reset status when ?reset=1 is present", async () => {
+				const response = await request(app).get("/login?reset=1");
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Login");
+				expect(pageData.props.status).toMatch(/reset/i);
+			});
+		});
+
+		describe("POST /login", () => {
+			it("authenticates a valid user and redirects to /home", async () => {
+				const user = await testDataFactory.createUser({ email: "loginok@example.com" });
+
+				const response = await request(app)
+					.post("/login")
+					.send({ email: user.email, password: "password123" });
+
+				expect(response.status).toBe(302);
+				expect(response.headers.location).toBe("/home");
+			});
+
+			it("returns an invalid credentials error for the wrong password", async () => {
+				const user = await testDataFactory.createUser({ email: "wrongpw@example.com" });
+
+				const response = await request(app)
+					.post("/login")
+					.send({ email: user.email, password: "not-the-password" });
+
+				expect(response.status).toBe(200);
+				const pageData = extractInertiaPageData(response.text);
+				expect(pageData.component).toBe("Auth/Login");
+				expect(pageData.props.errors.email).toBe("Invalid credentials");
+			});
+		});
+	});
+
 	// ─── Forgot Password ────────────────────────────────────────────────────────
 
 	describe("Forgot Password", () => {
 		describe("GET /forgot-password", () => {
 			it("renders the forgot password page", async () => {
-				const response = await supertest(app).get("/forgot-password");
+				const response = await request(app).get("/forgot-password");
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/ForgotPassword");
@@ -75,7 +192,7 @@ describe("Auth Flows Integration Tests", () => {
 			it("accepts a valid email and returns a success status", async () => {
 				await testDataFactory.createUser({ email: "reset@example.com" });
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/forgot-password")
 					.send({ email: "reset@example.com" });
 
@@ -91,7 +208,7 @@ describe("Auth Flows Integration Tests", () => {
 			});
 
 			it("returns the same success response for a non-existent email (no enumeration)", async () => {
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/forgot-password")
 					.send({ email: "ghost@example.com" });
 
@@ -102,7 +219,7 @@ describe("Auth Flows Integration Tests", () => {
 			});
 
 			it("returns a validation error for an invalid email format", async () => {
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/forgot-password")
 					.send({ email: "not-an-email" });
 
@@ -119,7 +236,7 @@ describe("Auth Flows Integration Tests", () => {
 	describe("Password Reset", () => {
 		describe("GET /reset-password/:token", () => {
 			it("renders the reset password page with the token and email", async () => {
-				const response = await supertest(app)
+				const response = await request(app)
 					.get("/reset-password/sometoken?email=user@example.com");
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
@@ -139,7 +256,7 @@ describe("Auth Flows Integration Tests", () => {
 				em.create(PasswordReset, { email: user.email, tokenHash, createdAt: new Date() });
 				await em.flush();
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/reset-password")
 					.send({
 						token: rawToken,
@@ -160,7 +277,7 @@ describe("Auth Flows Integration Tests", () => {
 			it("returns an error for an invalid token", async () => {
 				await testDataFactory.createUser({ email: "valid2@example.com" });
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/reset-password")
 					.send({
 						token: "badtoken",
@@ -186,7 +303,7 @@ describe("Auth Flows Integration Tests", () => {
 				em.create(PasswordReset, { email: user.email, tokenHash, createdAt: pastDate });
 				await em.flush();
 
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/reset-password")
 					.send({
 						token: rawToken,
@@ -202,7 +319,7 @@ describe("Auth Flows Integration Tests", () => {
 			});
 
 			it("returns a validation error for mismatched passwords", async () => {
-				const response = await supertest(app)
+				const response = await request(app)
 					.post("/reset-password")
 					.send({
 						token: "sometoken",
@@ -225,17 +342,17 @@ describe("Auth Flows Integration Tests", () => {
 		describe("GET /verify-email", () => {
 			it("renders the verify email page for authenticated users", async () => {
 				const user = await testDataFactory.createUser();
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/verify-email");
+				const response = await session.get("/verify-email");
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/VerifyEmail");
 			});
 
 			it("redirects unauthenticated users to login", async () => {
-				const response = await supertest(app).get("/verify-email");
+				const response = await request(app).get("/verify-email");
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
 			});
@@ -246,11 +363,11 @@ describe("Auth Flows Integration Tests", () => {
 				const user = await testDataFactory.createUser({ email: "verify@example.com" });
 				expect(user.emailVerifiedAt).toBeUndefined();
 
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 
 				const token = makeVerificationToken(user.id, user.email);
-				const response = await agent.get(`/verify-email/${token}`);
+				const response = await session.get(`/verify-email/${token}`);
 
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/home");
@@ -262,10 +379,10 @@ describe("Auth Flows Integration Tests", () => {
 
 			it("returns an error for an invalid token", async () => {
 				const user = await testDataFactory.createUser({ email: "invalidtoken@example.com" });
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 
-				const response = await agent.get("/verify-email/invalidtoken");
+				const response = await session.get("/verify-email/invalidtoken");
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/VerifyEmail");
@@ -286,10 +403,10 @@ describe("Auth Flows Integration Tests", () => {
 					.digest("hex");
 				const expiredToken = `${payload}.${sig}`;
 
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 
-				const response = await agent.get(`/verify-email/${expiredToken}`);
+				const response = await session.get(`/verify-email/${expiredToken}`);
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/VerifyEmail");
@@ -300,14 +417,14 @@ describe("Auth Flows Integration Tests", () => {
 				const user = await testDataFactory.createUser({ email: "already@example.com" });
 
 				// Verify once via authenticated agent
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 				const token = makeVerificationToken(user.id, user.email);
-				await agent.get(`/verify-email/${token}`);
+				await session.get(`/verify-email/${token}`);
 
 				// Verify again with a new token (still authenticated)
 				const token2 = makeVerificationToken(user.id, user.email);
-				const response2 = await agent.get(`/verify-email/${token2}`);
+				const response2 = await session.get(`/verify-email/${token2}`);
 				expect(response2.status).toBe(302);
 				expect(response2.headers.location).toBe("/home");
 			});
@@ -316,10 +433,10 @@ describe("Auth Flows Integration Tests", () => {
 		describe("POST /email/resend-verification", () => {
 			it("resends the verification email for an unverified user", async () => {
 				const user = await testDataFactory.createUser({ email: "resend@example.com" });
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 
-				const response = await agent.post("/email/resend-verification");
+				const response = await session.post("/email/resend-verification");
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/VerifyEmail");
@@ -335,10 +452,10 @@ describe("Auth Flows Integration Tests", () => {
 				dbUser!.emailVerifiedAt = new Date();
 				await em.flush();
 
-				const agent = supertest.agent(app);
-				await agent.post("/login").send({ email: user.email, password: "password123" });
+				const session = agent(app);
+				await session.post("/login").send({ email: user.email, password: "password123" });
 
-				const response = await agent.post("/email/resend-verification");
+				const response = await session.post("/email/resend-verification");
 				expect(response.status).toBe(200);
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/VerifyEmail");
@@ -346,7 +463,7 @@ describe("Auth Flows Integration Tests", () => {
 			});
 
 			it("redirects unauthenticated requests to login", async () => {
-				const response = await supertest(app).post("/email/resend-verification");
+				const response = await request(app).post("/email/resend-verification");
 				expect(response.status).toBe(302);
 				expect(response.headers.location).toBe("/login");
 			});

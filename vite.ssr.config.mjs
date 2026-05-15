@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react()],
   publicDir: false,
   build: {
-    ssr: resolve(__dirname, 'src/views/ssr.tsx'),
+    ssr: resolve(__dirname, 'src/adapters/inbound/http/views/ssr.tsx'),
     outDir: 'dist',
     emptyOutDir: false,
     sourcemap: true,

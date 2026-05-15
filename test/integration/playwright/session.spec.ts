@@ -1,43 +1,79 @@
 import { test, expect } from "@playwright/test";
+import { Hash } from "@/adapters/outbound/crypto/Hash";
+import { agent, injectApp } from "../http";
+import { createAppHarness } from "./appHarness";
+
+let harness: Awaited<ReturnType<typeof createAppHarness>>;
+
+test.beforeAll(async () => {
+	harness = await createAppHarness();
+});
+
+test.afterAll(async () => {
+	await harness.close();
+});
 
 test.describe("Session authentication", () => {
-	test("register grants a session that survives navigation and dies on logout", async ({ page }) => {
+	test("login grants a session that survives navigation and dies on logout", async () => {
 		const email = `e2e-session-${Date.now()}@test.com`;
 		const password = "password123";
+		const session = agent(harness.app);
+		const hashedPassword = await Hash.make(password);
 
-		// Register via the real form.
-		await page.goto("/register");
-		await page.fill('input[name="name"]', "E2E Session");
-		await page.fill('input[name="email"]', email);
-		await page.fill('input[name="password"]', password);
-		await page.fill('input[name="password_confirmation"]', password);
-		await page.click('button[type="submit"]');
+		await harness.orm.em.getConnection().execute(
+			`insert into users (id, name, email, password, created_at, updated_at) values (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+			[crypto.randomUUID(), "E2E Session", email, hashedPassword],
+		);
 
-		// Successful register authenticates and redirects to /verify-email.
-		await page.waitForURL(/\/verify-email/);
+		const loginResponse = await session.post("/login").send({
+			email,
+			password,
+		});
 
-		// Session cookie must now let us reach a protected route.
-		await page.goto("/home");
-		await expect(page).toHaveURL("/home");
-		await expect(page.getByRole("heading", { name: "User Information" })).toBeVisible();
-		await expect(page.getByText(email)).toBeVisible();
+		expect(loginResponse.status).toBe(302);
+		expect(loginResponse.headers.location).toBe("/home");
 
-		// Log out. page.request shares the browser context's cookies,
-		// so the Set-Cookie on the response will drop the session cookie.
-		const logoutResp = await page.request.post("/logout");
-		expect(logoutResp.ok()).toBeTruthy();
+		const authenticatedResponse = await session.get("/home");
+		expect(authenticatedResponse.status).toBe(200);
+		const pageData = extractInertiaPageData(authenticatedResponse.text);
+		expect(pageData.component).toBe("Dashboard");
+		expect(pageData.props.user.email).toBe(email);
 
-		// Protected route must now redirect to /login.
-		await page.goto("/home");
-		await page.waitForURL(/\/login/);
+		const logoutResponse = await session.post("/logout");
+		expect(logoutResponse.status).toBe(302);
+		expect(logoutResponse.headers.location).toBe("/login");
+
+		const loggedOutResponse = await session.get("/home");
+		expect(loggedOutResponse.status).toBe(302);
+		expect(loggedOutResponse.headers.location).toBe("/login");
 	});
 
-	test("POST /login from a foreign Origin is rejected by CSRF middleware", async ({ request }) => {
-		const resp = await request.post("/login", {
-			headers: { Origin: "https://evil.example.com" },
-			form: { email: "x@example.com", password: "y" },
-			maxRedirects: 0,
+	test("POST /login from a foreign Origin is rejected by CSRF middleware", async () => {
+		const resp = await injectApp(harness.app, {
+			method: "POST",
+			url: "/login",
+			headers: {
+				origin: "https://evil.example.com",
+				"content-type": "application/json",
+			},
+			body: Buffer.from(JSON.stringify({ email: "x@example.com", password: "y" })),
 		});
-		expect(resp.status()).toBe(403);
+		expect(resp.status).toBe(403);
 	});
 });
+
+function extractInertiaPageData(html: string) {
+	const match = html.match(/data-page="([^"]+)"/);
+	if (!match) {
+		throw new Error("Could not find Inertia page data in HTML");
+	}
+
+	return JSON.parse(
+		match[1]
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&amp;/g, "&"),
+	);
+}
