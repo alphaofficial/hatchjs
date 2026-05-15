@@ -1,6 +1,7 @@
 import { Queue } from '@/adapters/outbound/queue/graphileWorker';
+import { workerTasks } from '@/adapters/inbound/jobs/workerTasks';
 import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
-import { startWorker, taskList } from '@/worker';
+import { startWorker } from '@/worker';
 
 describe('worker', () => {
 	afterEach(() => {
@@ -13,7 +14,8 @@ describe('worker', () => {
 		const processOnSpy = jest.spyOn(process, 'on').mockImplementation(() => process);
 		const queueStartSpy = jest.spyOn(Queue, 'start').mockImplementation(async (connectionString, registeredTasks) => {
 			expect(connectionString).toBe('postgres://worker.test/theboringarchitecture');
-			expect(registeredTasks).toBe(taskList);
+			expect(registeredTasks).toBe(workerTasks);
+			expect(workerTasks).toHaveProperty('sendWelcomeEmail');
 			await registeredTasks.sendWelcomeEmail({ to: 'worker@example.com', name: 'Worker Test' });
 			return runner;
 		});

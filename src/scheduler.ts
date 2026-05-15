@@ -1,20 +1,9 @@
 import 'dotenv-defaults/config';
 import { MikroORM } from '@mikro-orm/core';
+import { registerScheduledTasks } from '@/adapters/inbound/jobs/scheduledTasks';
 import ormConfig from '@/adapters/outbound/persistence/orm.config';
 import { Scheduler } from '@/adapters/shared/scheduler';
-import { Session } from '@/core/models/Session';
 import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
-import variables from '@/config/variables';
-
-async function cleanExpiredSessions(orm: MikroORM): Promise<void> {
-    const maxAgeSeconds = Math.floor(variables.SESSION_MAX_AGE / 1000);
-    const cutoff = Math.floor(Date.now() / 1000) - maxAgeSeconds;
-    const em = orm.em.fork();
-    const deleted = await em.nativeDelete(Session, { last_activity: { $lte: cutoff } });
-    if (deleted > 0) {
-        PinoLogger.info({ scope: 'scheduler', message: `Cleaned ${deleted} expired session(s)` });
-    }
-}
 
 function registerShutdown(orm: MikroORM): void {
     const shutdown = async () => {
@@ -30,8 +19,7 @@ function registerShutdown(orm: MikroORM): void {
 export async function startScheduler(): Promise<MikroORM> {
     const orm = await MikroORM.init(ormConfig);
 
-    // Clean expired sessions every hour
-    Scheduler.schedule('0 * * * *', () => cleanExpiredSessions(orm));
+    registerScheduledTasks(orm);
 
     const registered = Scheduler.getRegisteredTasks();
     PinoLogger.info({

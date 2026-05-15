@@ -1,6 +1,7 @@
 import 'dotenv-defaults/config';
+import { workerTasks } from '@/adapters/inbound/jobs/workerTasks';
 import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
-import { startWorker, taskList } from '@/worker';
+import { startWorker } from '@/worker';
 
 async function runWorkerSmoke(): Promise<void> {
 	PinoLogger.warn({
@@ -8,7 +9,7 @@ async function runWorkerSmoke(): Promise<void> {
 		message: 'DATABASE_URL not set. Running local worker smoke instead.',
 	});
 
-	await taskList.sendWelcomeEmail({ to: 'smoke@example.com', name: 'Smoke Test' });
+	await workerTasks.sendWelcomeEmail({ to: 'smoke@example.com', name: 'Smoke Test' });
 
 	PinoLogger.info({
 		scope: 'worker',

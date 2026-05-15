@@ -1,12 +1,8 @@
 import 'dotenv-defaults/config';
 import type { Runner } from 'graphile-worker';
+import { workerTasks } from '@/adapters/inbound/jobs/workerTasks';
 import { Queue } from '@/adapters/outbound/queue/graphileWorker';
-import { sendWelcomeEmail } from '@/adapters/inbound/jobs/sendWelcomeEmail';
 import { PinoLogger } from '@/adapters/shared/logger/pinoLogger';
-
-export const taskList = {
-	sendWelcomeEmail,
-};
 
 function registerShutdown(runner: Runner): void {
 	const shutdown = async () => {
@@ -26,7 +22,7 @@ export async function startWorker(connectionString = process.env.DATABASE_URL): 
 
 	PinoLogger.info({ scope: 'worker', message: 'Starting Graphile Worker...' });
 
-	const runner = await Queue.start(connectionString, taskList);
+	const runner = await Queue.start(connectionString, workerTasks);
 
 	PinoLogger.info({ scope: 'worker', message: 'Worker started and listening for jobs.' });
 	registerShutdown(runner);
