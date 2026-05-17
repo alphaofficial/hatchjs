@@ -1,7 +1,9 @@
-import { Cache, CacheDriver } from '@/lib/cache';
+import { MemoryCache } from '@/cache/driver/memory';
+import { Cache, CacheDriver } from '@/primitives/cache';
 
 describe('cache (in-memory driver)', () => {
     beforeEach(async () => {
+        Cache.setDriver(new MemoryCache());
         await Cache.flush();
     });
 
@@ -47,7 +49,7 @@ describe('cache (in-memory driver)', () => {
         expect(await Cache.get('forever')).toBe('value');
     });
 
-    it('supports registerDriver with a custom driver', async () => {
+    it('supports a custom driver', async () => {
         const data = new Map<string, unknown>();
         const customDriver: CacheDriver = {
             get: async (key) => data.get(key) as any,
@@ -55,26 +57,13 @@ describe('cache (in-memory driver)', () => {
             delete: async (key) => { data.delete(key); },
             flush: async () => { data.clear(); },
         };
-        Cache.registerDriver('custom', customDriver);
-        const prev = process.env.CACHE_DRIVER;
-        try {
-            process.env.CACHE_DRIVER = 'custom';
-            await Cache.set('x', 42);
-            expect(await Cache.get('x')).toBe(42);
-        } finally {
-            if (prev === undefined) delete process.env.CACHE_DRIVER;
-            else process.env.CACHE_DRIVER = prev;
-        }
+        Cache.setDriver(customDriver);
+        await Cache.set('x', 42);
+        expect(await Cache.get('x')).toBe(42);
     });
 
-    it('throws when an unregistered driver is selected', async () => {
-        const prev = process.env.CACHE_DRIVER;
-        try {
-            process.env.CACHE_DRIVER = 'nonexistent';
-            expect(() => Cache.get('any')).toThrow("Cache driver 'nonexistent' is not registered");
-        } finally {
-            if (prev === undefined) delete process.env.CACHE_DRIVER;
-            else process.env.CACHE_DRIVER = prev;
-        }
+    it('throws when no driver is registered', () => {
+        Cache.reset();
+        expect(() => Cache.get('any')).toThrow('Cache driver is not registered');
     });
 });

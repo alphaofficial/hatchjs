@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { InertiaExpressAdapter } from '../primitives/InertiaExpressAdapter';
-import { renderHtml } from '../lib/renderHtml';
+import { InertiaExpressAdapter } from '../primitives/inertiaExpressAdapter';
+import { renderHtml } from '../primitives/renderHtml';
 import variables from '../config/variables';
 
 declare module 'express-serve-static-core' {

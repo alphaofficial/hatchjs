@@ -2,6 +2,7 @@ import supertest from "supertest";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
 import { User } from "../../../src/models/User";
+import { Mailer, type MailMessage } from "@/primitives/mail";
 
 describe("Pages Integration Tests", () => {
 	let app: any;
@@ -166,6 +167,13 @@ describe("Pages Integration Tests", () => {
 
 		describe("POST /register", () => {
 			it("should register new user with valid data", async () => {
+				const sent: MailMessage[] = [];
+				Mailer.setDriver({
+					sendMail: async (message) => {
+						sent.push(message);
+					},
+				});
+
 				const userData = {
 					name: "John Doe",
 					email: "john@example.com",
@@ -184,6 +192,10 @@ describe("Pages Integration Tests", () => {
 				const createdUser = await em.findOne(User, { email: "john@example.com" });
 				expect(createdUser).toBeDefined();
 				expect(createdUser?.name).toBe("John Doe");
+				expect(sent).toHaveLength(1);
+				expect(sent[0].subject).toBe("Verify your email address");
+				expect(sent[0].html).toContain("Welcome to The Boring Architecture!");
+				expect(sent[0].html).toContain("/verify-email/");
 			});
 
 			it("should return error for existing email", async () => {

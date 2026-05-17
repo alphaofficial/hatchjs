@@ -27,12 +27,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PAGES_DIR="$ROOT/src/views/pages"
 CTRL_DIR="$ROOT/src/controllers"
-ROUTES_FILE="$ROOT/src/routes/route.ts"
+ROUTES_FILE="$ROOT/src/router/route.ts"
 MODELS_DIR="$ROOT/src/models"
 MAPPINGS_DIR="$ROOT/src/database/mappings"
-JOBS_DIR="$ROOT/src/jobs"
+JOBS_DIR="$ROOT/src/jobs/handlers"
+JOBS_REGISTRY="$ROOT/src/jobs/jobs.ts"
 MAIL_DIR="$ROOT/src/mail/templates"
-LISTENERS_DIR="$ROOT/src/listeners"
+EVENT_HANDLERS_DIR="$ROOT/src/events/handlers"
+EVENTS_REGISTRY="$ROOT/src/events/events.ts"
 
 red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -57,6 +59,15 @@ kebab() {
 		| tr '[:upper:]' '[:lower:]'
 }
 
+lower_first() {
+	printf '%s' "$1" | awk '{print tolower(substr($0,1,1)) substr($0,2)}'
+}
+
+# Event name -> dotted event key (UserSubscribed -> user.subscribed)
+event_key() {
+	kebab "$1" | sed 's/-/./g'
+}
+
 # basename of a page path: Auth/Profile -> Profile
 basename_of() { printf '%s' "${1##*/}"; }
 
@@ -74,7 +85,7 @@ insert_route_line() {
 		{ print }
 	' "$ROUTES_FILE" > "$ROUTES_FILE.tmp"
 	mv "$ROUTES_FILE.tmp" "$ROUTES_FILE"
-	info "updated src/routes/route.ts"
+	info "updated src/router/route.ts"
 }
 
 ensure_import() {
@@ -385,25 +396,73 @@ cmd_route() {
 make_job() {
 	local name="$1"              # SendWelcomeEmail
 	mkdir -p "$JOBS_DIR"
-	local camel
-	camel="$(printf '%s' "$name" | awk '{print tolower(substr($0,1,1)) substr($0,2)}')"
-	local file="$JOBS_DIR/${camel}.ts"
+	local camel fn file
+	camel="$(lower_first "$name")"
+	fn="${camel}Job"
+	file="$JOBS_DIR/${fn}.ts"
 	if [ -e "$file" ]; then
-		info "job exists: ${camel}.ts"
-		return
-	fi
-	cat > "$file" <<TS
+		info "job exists: handlers/${fn}.ts"
+	else
+		cat > "$file" <<TS
 interface ${name}Payload {
 	// add your payload fields here
 }
 
-export async function ${camel}(payload: unknown): Promise<void> {
+export async function ${fn}(payload: unknown): Promise<void> {
 	const data = payload as ${name}Payload;
 	// TODO: implement job logic
 	void data;
 }
 TS
-	green "created src/jobs/${camel}.ts"
+		green "created src/jobs/handlers/${fn}.ts"
+	fi
+	register_job "$fn"
+}
+
+register_job() {
+	local fn="$1"
+	[ -f "$JOBS_REGISTRY" ] || cat > "$JOBS_REGISTRY" <<'TS'
+export const jobs = {
+};
+TS
+	local import_line="import { ${fn} } from './handlers/${fn}';"
+	grep -qF "$import_line" "$JOBS_REGISTRY" || {
+		awk -v ins="$import_line" '
+			/^import / { last = NR }
+			{ lines[NR] = $0 }
+			END {
+				if (last == 0) print ins
+				for (i = 1; i <= NR; i++) {
+					print lines[i]
+					if (i == last) print ins
+				}
+			}
+		' "$JOBS_REGISTRY" > "$JOBS_REGISTRY.tmp"
+		mv "$JOBS_REGISTRY.tmp" "$JOBS_REGISTRY"
+	}
+	grep -Eq "^[[:space:]]*${fn},?[[:space:]]*$" "$JOBS_REGISTRY" && return
+	awk -v entry="    ""${fn}," '
+		function flush_prev() {
+			if (have_prev) {
+				print prev
+				have_prev = 0
+			}
+		}
+		/^}/ && !done {
+			if (have_prev && prev ~ /^[[:space:]]*[A-Za-z_$][A-Za-z0-9_$]*[[:space:]]*$/) {
+				prev = prev ","
+			}
+			flush_prev()
+			print entry
+			done = 1
+			print
+			next
+		}
+		{ flush_prev(); prev = $0; have_prev = 1 }
+		END { flush_prev() }
+	' "$JOBS_REGISTRY" > "$JOBS_REGISTRY.tmp"
+	mv "$JOBS_REGISTRY.tmp" "$JOBS_REGISTRY"
+	info "updated src/jobs/jobs.ts"
 }
 
 make_mail() {
@@ -429,26 +488,75 @@ TS
 	green "created src/mail/templates/${name}.ts"
 }
 
-make_event_listener() {
+make_event_handler() {
 	local name="$1"              # UserSubscribed
-	mkdir -p "$LISTENERS_DIR"
-	local camel
-	camel="$(printf '%s' "$name" | awk '{print tolower(substr($0,1,1)) substr($0,2)}')"
-	local file="$LISTENERS_DIR/${camel}.ts"
+	mkdir -p "$EVENT_HANDLERS_DIR"
+	local fn key file
+	fn="on${name}"
+	key="$(event_key "$name")"
+	file="$EVENT_HANDLERS_DIR/${fn}.ts"
 	if [ -e "$file" ]; then
-		info "listener exists: ${camel}.ts"
-		return
-	fi
-	cat > "$file" <<TS
-import { emitter } from '../lib/events';
+		info "event handler exists: ${fn}.ts"
+	else
+		cat > "$file" <<TS
+import type { AppEvents } from '@/events/events';
 
-// TODO: replace 'user.registered' with the event you want to listen for
-emitter.on('user.registered', (payload) => {
-	// TODO: implement ${name} listener logic
+export function ${fn}(payload: AppEvents['${key}']): void {
+	// TODO: implement ${name} event handler logic
 	void payload;
-});
+}
 TS
-	green "created src/listeners/${camel}.ts"
+		green "created src/events/handlers/${fn}.ts"
+	fi
+	register_event_handler "$key" "$fn"
+}
+
+register_event_handler() {
+	local key="$1"
+	local fn="$2"
+	[ -f "$EVENTS_REGISTRY" ] || cat > "$EVENTS_REGISTRY" <<'TS'
+import { Emitter } from '@/primitives/events';
+import type { EventMap } from '@/primitives/ports/events';
+
+export interface AppEvents extends EventMap {
+}
+
+export function registerAppEventHandlers(): void {
+}
+TS
+	local import_line="import { ${fn} } from '@/events/handlers/${fn}';"
+	grep -qF "$import_line" "$EVENTS_REGISTRY" || {
+		awk -v ins="$import_line" '
+			/^import / { last = NR }
+			{ lines[NR] = $0 }
+			END {
+				for (i = 1; i <= NR; i++) {
+					print lines[i]
+					if (i == last) print ins
+				}
+			}
+		' "$EVENTS_REGISTRY" > "$EVENTS_REGISTRY.tmp"
+		mv "$EVENTS_REGISTRY.tmp" "$EVENTS_REGISTRY"
+	}
+	grep -qF "'${key}':" "$EVENTS_REGISTRY" || {
+		awk -v entry="    '${key}': unknown;" '
+			/^}/ && in_iface && !done { print entry; done = 1 }
+			/^export interface AppEvents/ { in_iface = 1 }
+			in_iface && /^}/ { in_iface = 0 }
+			{ print }
+		' "$EVENTS_REGISTRY" > "$EVENTS_REGISTRY.tmp"
+		mv "$EVENTS_REGISTRY.tmp" "$EVENTS_REGISTRY"
+	}
+	local registration="    Emitter.on<AppEvents, '${key}'>('${key}', ${fn});"
+	grep -qF "$registration" "$EVENTS_REGISTRY" && return
+	awk -v entry="$registration" '
+		/^}/ && in_fn && !done { print entry; done = 1 }
+		/^export function registerAppEventHandlers/ { in_fn = 1 }
+		in_fn && /^}/ { in_fn = 0 }
+		{ print }
+	' "$EVENTS_REGISTRY" > "$EVENTS_REGISTRY.tmp"
+	mv "$EVENTS_REGISTRY.tmp" "$EVENTS_REGISTRY"
+	info "updated src/events/events.ts"
 }
 
 cmd_job() {
@@ -469,7 +577,7 @@ cmd_event() {
 	local name="${1:-}"
 	[ -z "$name" ] && die "usage: scaffold.sh event <Name>"
 	assert_pascal "$name"
-	make_event_listener "$name"
+	make_event_handler "$name"
 }
 
 # --- entrypoint ------------------------------------------------------------

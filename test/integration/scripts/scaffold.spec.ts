@@ -24,19 +24,35 @@ const route = Router();
 export default route;
 `;
 
+const JOBS_SEED = `export const jobs = {
+}
+`;
+
+const EVENTS_SEED = `import { Emitter } from '@/primitives/events';
+import type { EventMap } from '@/primitives/ports/events';
+
+export interface AppEvents extends EventMap {
+}
+
+export function registerAppEventHandlers(): void {
+}
+`;
+
 function sandbox(): string {
 	const dir = mkdtempSync(join(tmpdir(), "tba-scaffold-"));
 	mkdirSync(join(dir, "scripts"), { recursive: true });
 	mkdirSync(join(dir, "src", "controllers"), { recursive: true });
-	mkdirSync(join(dir, "src", "routes"), { recursive: true });
+	mkdirSync(join(dir, "src", "router"), { recursive: true });
 	mkdirSync(join(dir, "src", "views", "pages"), { recursive: true });
 	mkdirSync(join(dir, "src", "models"), { recursive: true });
 	mkdirSync(join(dir, "src", "database", "mappings"), { recursive: true });
-	mkdirSync(join(dir, "src", "jobs"), { recursive: true });
+	mkdirSync(join(dir, "src", "jobs", "handlers"), { recursive: true });
+	mkdirSync(join(dir, "src", "events", "handlers"), { recursive: true });
 	mkdirSync(join(dir, "src", "mail", "templates"), { recursive: true });
-	mkdirSync(join(dir, "src", "listeners"), { recursive: true });
 	copyFileSync(SCAFFOLD_SRC, join(dir, "scripts", "scaffold.sh"));
-	writeFileSync(join(dir, "src", "routes", "route.ts"), ROUTE_SEED);
+	writeFileSync(join(dir, "src", "router", "route.ts"), ROUTE_SEED);
+	writeFileSync(join(dir, "src", "jobs", "jobs.ts"), JOBS_SEED);
+	writeFileSync(join(dir, "src", "events", "events.ts"), EVENTS_SEED);
 	// Symlink node_modules so dynamic imports of generated mapping files can
 	// resolve @mikro-orm/* when the round-trip test needs it.
 	symlinkSync(join(REPO_ROOT, "node_modules"), join(dir, "node_modules"));
@@ -76,7 +92,7 @@ describe("scaffold.sh", () => {
 			expect(ctrl).toContain("export class PostsController extends BaseController");
 			expect(ctrl).toContain("'Posts'");
 
-			const routes = read(dir, "src/routes/route.ts");
+			const routes = read(dir, "src/router/route.ts");
 			expect(routes).toContain(
 				"import { PostsController } from '../controllers/PostsController';",
 			);
@@ -93,7 +109,7 @@ describe("scaffold.sh", () => {
 			expect(existsSync(join(dir, "src/views/pages/Auth/Profile.tsx"))).toBe(true);
 			const page = read(dir, "src/views/pages/Auth/Profile.tsx");
 			expect(page).toContain("export default function Profile");
-			expect(read(dir, "src/routes/route.ts")).toContain(
+			expect(read(dir, "src/router/route.ts")).toContain(
 				"route.get('/profile', ProfileController.index);",
 			);
 		});
@@ -103,12 +119,12 @@ describe("scaffold.sh", () => {
 			const before = {
 				ctrl: read(dir, "src/controllers/PostsController.ts"),
 				page: read(dir, "src/views/pages/Posts.tsx"),
-				routes: read(dir, "src/routes/route.ts"),
+				routes: read(dir, "src/router/route.ts"),
 			};
 			run(dir, "page Posts");
 			expect(read(dir, "src/controllers/PostsController.ts")).toBe(before.ctrl);
 			expect(read(dir, "src/views/pages/Posts.tsx")).toBe(before.page);
-			expect(read(dir, "src/routes/route.ts")).toBe(before.routes);
+			expect(read(dir, "src/router/route.ts")).toBe(before.routes);
 		});
 	});
 
@@ -117,7 +133,7 @@ describe("scaffold.sh", () => {
 			run(dir, "controller Billing");
 			expect(existsSync(join(dir, "src/controllers/BillingController.ts"))).toBe(true);
 			expect(existsSync(join(dir, "src/views/pages/Billing.tsx"))).toBe(false);
-			expect(read(dir, "src/routes/route.ts")).not.toContain("Billing");
+			expect(read(dir, "src/router/route.ts")).not.toContain("Billing");
 		});
 	});
 
@@ -127,7 +143,7 @@ describe("scaffold.sh", () => {
 			run(dir, "route get /health Public.health");
 			run(dir, "route get /ping Public.ping");
 
-			const routes = read(dir, "src/routes/route.ts");
+			const routes = read(dir, "src/router/route.ts");
 			// import line contains PublicController twice (named + module path),
 			// plus two route references = 4 total occurrences, one import line.
 			expect(
@@ -142,7 +158,7 @@ describe("scaffold.sh", () => {
 			run(dir, "route post /posts Posts.create --auth");
 			run(dir, "route get /login Auth.show --guest");
 
-			const routes = read(dir, "src/routes/route.ts");
+			const routes = read(dir, "src/router/route.ts");
 			expect(routes).toContain("route.post('/posts', auth, PostsController.create);");
 			expect(routes).toContain("route.get('/login', guest, AuthController.show);");
 		});
@@ -207,22 +223,49 @@ describe("scaffold.sh", () => {
 	});
 
 	describe("job", () => {
-		it("creates a job handler file", () => {
+		it("creates a job handler file and registers it", () => {
 			run(dir, "job SendWelcomeEmail");
 
-			const file = join(dir, "src/jobs/sendWelcomeEmail.ts");
+			const file = join(dir, "src/jobs/handlers/sendWelcomeEmailJob.ts");
 			expect(existsSync(file)).toBe(true);
 
-			const src = read(dir, "src/jobs/sendWelcomeEmail.ts");
+			const src = read(dir, "src/jobs/handlers/sendWelcomeEmailJob.ts");
 			expect(src).toContain("interface SendWelcomeEmailPayload");
-			expect(src).toContain("export async function sendWelcomeEmail(payload: unknown)");
+			expect(src).toContain("export async function sendWelcomeEmailJob(payload: unknown)");
+
+			const registry = read(dir, "src/jobs/jobs.ts");
+			expect(registry).toContain("import { sendWelcomeEmailJob } from './handlers/sendWelcomeEmailJob';");
+			expect(registry).toContain("sendWelcomeEmailJob,");
+		});
+
+		it("adds a job to a non-empty registry whose existing entry has no trailing comma", () => {
+			writeFileSync(
+				join(dir, "src/jobs/jobs.ts"),
+				`import { sendWelcomeEmailJob } from './handlers/sendWelcomeEmailJob';
+
+export const jobs = {
+    sendWelcomeEmailJob
+}
+`,
+			);
+
+			run(dir, "job ProcessOrder");
+
+			const registry = read(dir, "src/jobs/jobs.ts");
+			expect(registry).toContain("import { processOrderJob } from './handlers/processOrderJob';");
+			expect(registry).toContain(`export const jobs = {
+    sendWelcomeEmailJob,
+    processOrderJob,
+}`);
 		});
 
 		it("is idempotent — second run does not overwrite", () => {
 			run(dir, "job ProcessOrder");
-			const before = read(dir, "src/jobs/processOrder.ts");
+			const before = read(dir, "src/jobs/handlers/processOrderJob.ts");
+			const registryBefore = read(dir, "src/jobs/jobs.ts");
 			run(dir, "job ProcessOrder");
-			expect(read(dir, "src/jobs/processOrder.ts")).toBe(before);
+			expect(read(dir, "src/jobs/handlers/processOrderJob.ts")).toBe(before);
+			expect(read(dir, "src/jobs/jobs.ts")).toBe(registryBefore);
 		});
 	});
 
@@ -247,22 +290,30 @@ describe("scaffold.sh", () => {
 	});
 
 	describe("event", () => {
-		it("creates a listener file", () => {
+		it("creates an event handler file and registers it", () => {
 			run(dir, "event UserSubscribed");
 
-			const file = join(dir, "src/listeners/userSubscribed.ts");
+			const file = join(dir, "src/events/handlers/onUserSubscribed.ts");
 			expect(existsSync(file)).toBe(true);
 
-			const src = read(dir, "src/listeners/userSubscribed.ts");
-			expect(src).toContain("emitter.on(");
-			expect(src).toContain("UserSubscribed");
+			const src = read(dir, "src/events/handlers/onUserSubscribed.ts");
+			expect(src).toContain("import type { AppEvents } from '@/events/events';");
+			expect(src).toContain("export function onUserSubscribed(payload: AppEvents['user.subscribed'])");
+
+			const registry = read(dir, "src/events/events.ts");
+			expect(registry).toContain("import { Emitter } from '@/primitives/events';");
+			expect(registry).toContain("import { onUserSubscribed } from '@/events/handlers/onUserSubscribed';");
+			expect(registry).toContain("'user.subscribed': unknown;");
+			expect(registry).toContain("Emitter.on<AppEvents, 'user.subscribed'>('user.subscribed', onUserSubscribed);");
 		});
 
 		it("is idempotent — second run does not overwrite", () => {
 			run(dir, "event UserUnsubscribed");
-			const before = read(dir, "src/listeners/userUnsubscribed.ts");
+			const before = read(dir, "src/events/handlers/onUserUnsubscribed.ts");
+			const registryBefore = read(dir, "src/events/events.ts");
 			run(dir, "event UserUnsubscribed");
-			expect(read(dir, "src/listeners/userUnsubscribed.ts")).toBe(before);
+			expect(read(dir, "src/events/handlers/onUserUnsubscribed.ts")).toBe(before);
+			expect(read(dir, "src/events/events.ts")).toBe(registryBefore);
 		});
 	});
 
@@ -292,11 +343,11 @@ describe("scaffold.sh", () => {
 			type PostCtor = new () => PostRow;
 
 			const { MikroORM } = await import("@mikro-orm/sqlite");
-			const mappingModule = (await import(mappingPath)) as {
-				PostMapper: Parameters<typeof MikroORM.init>[0]["entities"] extends
-					| infer E
-					| undefined
-					? E extends ReadonlyArray<infer Item>
+				const mappingModule = (await import(mappingPath)) as {
+					PostMapper: NonNullable<Parameters<typeof MikroORM.init>[0]>["entities"] extends
+						| infer E
+						| undefined
+						? E extends ReadonlyArray<infer Item>
 						? Item
 						: never
 					: never;

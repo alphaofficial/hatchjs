@@ -1,7 +1,9 @@
 import 'dotenv-defaults/config';
-import { Queue } from './lib/queue';
-import { sendWelcomeEmail } from './jobs/sendWelcomeEmail';
+import { Queue } from './primitives/queue';
 import { PinoLogger } from './logger/pinoLogger';
+import { jobs } from './jobs/jobs';
+import { configureRuntimeDrivers } from './runtime/config';
+
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -10,13 +12,12 @@ if (!connectionString) {
 	process.exit(1);
 }
 
-const taskList = {
-	sendWelcomeEmail,
-};
 
 PinoLogger.info({ scope: 'worker', message: 'Starting Graphile Worker...' });
 
-Queue.start(connectionString, taskList)
+
+configureRuntimeDrivers();
+Queue.start(connectionString, jobs)
 	.then(runner => {
 		PinoLogger.info({ scope: 'worker', message: 'Worker started and listening for jobs.' });
 		const shutdown = async () => {

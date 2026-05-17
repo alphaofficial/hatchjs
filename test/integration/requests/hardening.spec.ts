@@ -10,15 +10,17 @@ import { MikroORM, RequestContext } from "@mikro-orm/core";
 import { mock } from "jest-mock-extended";
 import path from "node:path";
 
-import ormConfig from "../../../src/database/orm.config";
-import { SessionStore, generateSessionToken } from "../../../src/middleware/sessionStore";
-import { Session } from "../../../src/models/Session";
-import { injectAuthHelpers } from "../../../src/middleware/authUtils";
-import { InertiaExpressMiddleware } from "../../../src/middleware/inertia";
-import { PinoLogger } from "../../../src/logger/pinoLogger";
-import { Hash } from "../../../src/utils/Hash";
-import { authRateLimit } from "../../../src/middleware/rateLimit";
-import { notFoundHandler, globalErrorHandler } from "../../../src/middleware/errorHandler";
+import ormConfig from "@/database/orm.config";
+import { createAppContext } from "@/primitives/http";
+import { SessionStore, generateSessionToken } from "@/primitives/sessionStore";
+import { Session } from "@/models/Session";
+import { injectAuthHelpers } from "@/middleware/authUtils";
+import { InertiaExpressMiddleware } from "@/middleware/inertia";
+import { PinoLogger } from "@/logger/pinoLogger";
+import { Hash } from "@/utils/Hash";
+import { authRateLimit } from "@/middleware/rateLimit";
+import { notFoundHandler, globalErrorHandler } from "@/middleware/errorHandler";
+import { useHealthChecks } from "@/middleware/healthChecks";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
 
@@ -32,8 +34,7 @@ interface BootOpts {
  * Allows injecting an extra throwing route or a real rate-limited route.
  */
 async function bootApp(opts: BootOpts = {}) {
-	const app = express();
-	const orm = await MikroORM.init({ ...ormConfig, dbName: "express_inertia_test.db" });
+	const { app, orm } = await createAppContext();
 	const sessionStore = new SessionStore(orm);
 
 	app.use(helmet({ contentSecurityPolicy: false }));
@@ -42,9 +43,10 @@ async function bootApp(opts: BootOpts = {}) {
 	app.use((req, _, next) => {
 		req.orm = orm;
 		(req as any).entityManager = orm.em.fork();
-		req.logger = mock<PinoLogger>();
+		req.logger = mock<typeof PinoLogger>() as typeof PinoLogger;
 		next();
 	});
+	useHealthChecks(app);
 	app.use((_, __, next) => RequestContext.create(orm.em.fork(), next));
 	app.use((req, _, next) => {
 		if (req.sessionID) {
@@ -145,6 +147,20 @@ describe("Hardening", () => {
 				await close();
 			}
 		});
+
+		it("rejects oversized JSON bodies with 413 when using bootstrapTestApp", async () => {
+			const { app, orm } = await bootstrapTestApp();
+			try {
+				const huge = "x".repeat(200 * 1024); // 200kb > 100kb cap
+				const r = await supertest(app)
+					.post("/login")
+					.set("Content-Type", "application/json")
+					.send(JSON.stringify({ email: huge, password: "y" }));
+				expect(r.status).toBe(413);
+			} finally {
+				await orm.close(true);
+			}
+		});
 	});
 
 	describe("Error handler", () => {
@@ -217,6 +233,23 @@ describe("Hardening", () => {
 			const r = await agent.get("/home");
 			expect(r.status).toBe(302);
 			expect(r.headers.location).toBe("/login");
+		});
+
+		it("sets SameSite=Lax on auth session cookies", async () => {
+			const user = await factory.createUser({ email: "cookie@example.com" });
+
+			const r = await supertest(app)
+				.post("/login")
+				.send({ email: user.email, password: "password123" });
+
+			expect(r.status).toBe(302);
+			const setCookie = r.headers["set-cookie"];
+			const cookies = Array.isArray(setCookie)
+				? setCookie
+				: setCookie
+					? [setCookie]
+					: [];
+			expect(cookies.join(";")).toContain("SameSite=Lax");
 		});
 	});
 

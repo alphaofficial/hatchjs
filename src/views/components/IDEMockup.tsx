@@ -45,7 +45,7 @@ const IDE_FILES: Record<string, { lang: string; lines: { n: number; t: ReactNode
 			{ n: 2, t: <><span className="text-[#c586c0]">import</span> {'{'} BaseController {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/controllers/BaseController&apos;</span></> },
 			{ n: 3, t: <><span className="text-[#c586c0]">import</span> {'{'} Hash {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/utils/Hash&apos;</span></> },
 			{ n: 4, t: <><span className="text-[#c586c0]">import</span> {'{'} User {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/models/User&apos;</span></> },
-			{ n: 5, t: <><span className="text-[#c586c0]">import</span> {'{'} Mailer {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/lib/mail&apos;</span></> },
+			{ n: 5, t: <><span className="text-[#c586c0]">import</span> {'{'} Mailer {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/primitives/mail&apos;</span></> },
 			{ n: 6, t: <><span className="text-[#c586c0]">import</span> {'{'} z {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;zod&apos;</span></> },
 			{ n: 7, t: '' },
 			{ n: 8, t: <><span className="text-[#c586c0]">export class</span> <span className="text-[#4ec9b0]">AuthController</span> <span className="text-[#c586c0]">extends</span> <span className="text-[#4ec9b0]">BaseController</span> {'{'}</> },
@@ -232,7 +232,7 @@ const IDE_FILES: Record<string, { lang: string; lines: { n: number; t: ReactNode
 	'ProcessUpload.ts': {
 		lang: 'TypeScript',
 		lines: [
-			{ n: 1, t: <><span className="text-[#c586c0]">import</span> {'{'} Storage {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/lib/storage&apos;</span></> },
+			{ n: 1, t: <><span className="text-[#c586c0]">import</span> {'{'} Storage {'}'} <span className="text-[#c586c0]">from</span> <span className="text-[#ce9178]">&apos;@/primitives/storage&apos;</span></> },
 			{ n: 2, t: '' },
 			{ n: 3, t: <><span className="text-[#c586c0]">export default async function</span> <span className="text-[#dcdcaa]">ProcessUpload</span>(payload: {'{'} path: <span className="text-[#4ec9b0]">string</span>; key: <span className="text-[#4ec9b0]">string</span> {'}'}) {'{'}</> },
 			{ n: 4, t: <span className="pl-4"><span className="text-[#c586c0]">const</span> file = <span className="text-[#c586c0]">await</span> Storage.<span className="text-[#dcdcaa]">get</span>(payload.path)</span> },

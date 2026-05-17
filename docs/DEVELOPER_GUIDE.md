@@ -50,7 +50,7 @@ npm run scaffold -- page Posts
 ```
 
 This creates `src/controllers/PostsController.ts`, `src/views/pages/Posts.tsx`,
-and a `GET /posts` route wired up in `src/routes/route.ts`. Pass an explicit
+and a `GET /posts` route wired up in `src/router/route.ts`. Pass an explicit
 path as the second argument to override the default kebab URL, and use a
 nested name for subdirectories:
 
@@ -195,10 +195,10 @@ export class PostController extends BaseController {
 
 ## 3. Wiring routes
 
-All routes live in `src/routes/route.ts`. Auth guards are applied per-route.
+All routes live in `src/router/route.ts`. Auth guards are applied per-route.
 
 ```ts
-// src/routes/route.ts
+// src/router/route.ts
 import { PostController } from '../controllers/PostController';
 import { auth } from '../middleware/auth';
 
@@ -428,36 +428,43 @@ Background jobs are powered by **Graphile Worker** (PostgreSQL-backed). The queu
 ### Dispatching a job
 
 ```ts
-import { Queue } from '../lib/queue';
+import { Queue } from '../primitives/queue';
 
-await Queue.dispatch('send-welcome-email', { userId: user.id });
+await Queue.dispatch('sendWelcomeEmailJob', { to: user.email, name: user.name });
 ```
 
 If `DATABASE_URL` is not configured, `dispatch()` logs a warning and returns without throwing.
 
 ### Defining a job handler
 
-Create a file in `src/jobs/`:
+Create a handler file under `src/jobs/handlers/`, then export it from the application-owned registry in `src/jobs/jobs.ts`:
 
 ```ts
-// src/jobs/send-welcome-email.ts
-export default async function sendWelcomeEmail(payload: { userId: string }) {
+// src/jobs/handlers/sendWelcomeEmailJob.ts
+export async function sendWelcomeEmailJob(payload: unknown): Promise<void> {
+  const { to, name } = payload as { to: string; name?: string };
   // send the email…
 }
+
+// src/jobs/jobs.ts
+import { sendWelcomeEmailJob } from './handlers/sendWelcomeEmailJob';
+
+export const jobs = {
+  sendWelcomeEmailJob,
+};
 ```
+
+`sendWelcomeEmailJob` is kept as a standalone queue example/test. User registration sends the verification email directly in `AuthController`, so the built-in registration event handler does not dispatch this job and does not create duplicate welcome/verification email behavior.
 
 ### Starting the worker
 
-Register your handlers and start the worker process:
+`src/worker.ts` imports the `jobs` map and starts the worker with it:
 
 ```ts
-// src/worker.ts
-import { Queue } from './lib/queue';
-import sendWelcomeEmail from './jobs/send-welcome-email';
+import { Queue } from './primitives/queue';
+import { jobs } from './jobs/jobs';
 
-await Queue.start(process.env.DATABASE_URL!, {
-  'send-welcome-email': sendWelcomeEmail,
-});
+await Queue.start(process.env.DATABASE_URL!, jobs);
 ```
 
 ```bash
@@ -474,12 +481,12 @@ npm run work
 
 ## 11. Mailer
 
-The mailer uses a driver-based architecture. All drivers implement `MailTransport`.
+The mailer uses a driver-based architecture. All drivers implement `MailTransport`. The app selects the active driver explicitly in `src/mail/config.ts` (called from `src/runtime/config.ts`); driver selection is not controlled by `MAIL_DRIVER` or other env switches.
 
 ### Sending an email
 
 ```ts
-import { Mailer } from '../lib/mail';
+import { Mailer } from '../primitives/mail';
 
 await Mailer.send('user@example.com', 'Welcome!', '<p>Thanks for joining.</p>');
 ```
@@ -488,13 +495,23 @@ await Mailer.send('user@example.com', 'Welcome!', '<p>Thanks for joining.</p>');
 
 | Driver | When used | Config required |
 | ------ | --------- | --------------- |
-| `log`  | `MAIL_DRIVER=log` (default in dev) | None — writes to Pino logger |
-| `smtp` | `MAIL_DRIVER=smtp` | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASS`, `MAIL_FROM` |
+| `log`  | Wired by the starter in `src/mail/config.ts` | None — writes to Pino logger |
+| `smtp` | Available when you edit app composition to instantiate `SmtpTransport` | Configure the constructor/options in code as needed |
+
+To opt into SMTP, wire it explicitly in `src/mail/config.ts`:
+
+```ts
+import { Mailer } from '../primitives/mail';
+import { SmtpTransport } from '../mail/driver/smtp';
+
+Mailer.setDriver(new SmtpTransport());
+```
 
 ### Registering a custom driver
 
 ```ts
-import { Mailer, MailTransport, MailMessage } from '../lib/mail';
+import { Mailer } from '../primitives/mail';
+import type { MailMessage, MailTransport } from '../primitives/ports/mail';
 
 class PostmarkTransport implements MailTransport {
   async sendMail(message: MailMessage) {
@@ -502,20 +519,14 @@ class PostmarkTransport implements MailTransport {
   }
 }
 
-Mailer.registerDriver('postmark', new PostmarkTransport());
-// Then set MAIL_DRIVER=postmark in your env
+Mailer.setDriver(new PostmarkTransport());
 ```
 
 ### Environment variables
 
 | Variable    | Default              | Notes                              |
 | ----------- | -------------------- | ---------------------------------- |
-| `MAIL_DRIVER` | `log`              | Active driver                      |
-| `MAIL_FROM`   | `noreply@example.com` | Sender address                  |
-| `MAIL_HOST`   | —                  | SMTP hostname                      |
-| `MAIL_PORT`   | `587`              | SMTP port                          |
-| `MAIL_USER`   | —                  | SMTP username                      |
-| `MAIL_PASS`   | —                  | SMTP password                      |
+| `MAIL_FROM` | `noreply@example.com` | Sender address used by `Mailer.send`; transport choice remains code-configured |
 
 ---
 
@@ -526,7 +537,7 @@ The scheduler wraps **node-cron** and lets you register recurring tasks in code.
 ### Scheduling a task
 
 ```ts
-import { Scheduler } from '../lib/scheduler';
+import { Scheduler } from '../primitives/scheduler';
 
 Scheduler.schedule('0 * * * *', async () => {
   // runs every hour
@@ -538,7 +549,7 @@ Scheduler.schedule('0 * * * *', async () => {
 
 ```ts
 // src/scheduler.ts
-import { Scheduler } from './lib/scheduler';
+import { Scheduler } from './primitives/scheduler';
 import { cleanExpiredSessions } from './tasks/cleanExpiredSessions';
 
 Scheduler.schedule('0 3 * * *', cleanExpiredSessions);
@@ -567,7 +578,7 @@ A lightweight typed event emitter backed by Node's `EventEmitter`.
 ### Emitting an event
 
 ```ts
-import { Emitter } from '../lib/events';
+import { Emitter } from '../primitives/events';
 
 Emitter.emit('user.registered', { id: user.id, email: user.email });
 ```
@@ -575,7 +586,7 @@ Emitter.emit('user.registered', { id: user.id, email: user.email });
 ### Listening to an event
 
 ```ts
-import { Emitter } from '../lib/events';
+import { Emitter } from '../primitives/events';
 
 Emitter.on('user.registered', ({ id, email }) => {
   console.log(`New user: ${email}`);
@@ -590,9 +601,11 @@ Emitter.on('user.registered', ({ id, email }) => {
 | `user.login`      | `{ id, email }`                | User signs in                       |
 | `user.verified`   | `{ id, email }`                | User verifies their email address   |
 
+The built-in handlers for these auth events log the event only. Keep email delivery in one place for each flow (for example, registration verification email is sent by `AuthController`) or explicitly move it to a queued job, but do not do both.
+
 ### Adding custom events
 
-Extend `AppEvents` in `src/lib/events.ts`:
+Extend `AppEvents` in `src/events/events.ts`:
 
 ```ts
 export interface AppEvents {
@@ -615,12 +628,12 @@ export interface AppEvents {
 
 ## 14. Caching
 
-Driver-based in-process cache. The default driver is an in-memory `Map` with TTL support.
+Driver-based in-process cache. The framework runtime wires an in-memory `MemoryCache` by default.
 
 ### Usage
 
 ```ts
-import { Cache } from '../lib/cache';
+import { Cache } from '../primitives/cache';
 
 // Store a value for 60 seconds
 await Cache.set('user:42', { name: 'Alice' }, 60);
@@ -638,7 +651,7 @@ await Cache.flush();
 ### Registering a custom driver
 
 ```ts
-import { Cache, CacheDriver } from '../lib/cache';
+import { Cache, type CacheDriver } from '../primitives/cache';
 
 class RedisCache implements CacheDriver {
   async get<T>(key: string) { /* … */ }
@@ -647,26 +660,19 @@ class RedisCache implements CacheDriver {
   async flush() { /* … */ }
 }
 
-Cache.registerDriver('redis', new RedisCache());
-// Then set CACHE_DRIVER=redis in your env
+Cache.setDriver(new RedisCache());
 ```
-
-### Environment variables
-
-| Variable       | Default  | Notes                      |
-| -------------- | -------- | -------------------------- |
-| `CACHE_DRIVER` | `memory` | Active cache driver        |
 
 ---
 
 ## 15. File Storage
 
-Driver-based file storage. Ships a local disk driver (default) and a memory driver (tests).
+Driver-based file storage. Ships a local disk driver (wired by `src/storage/config.ts`) and S3-compatible driver code you can explicitly wire in application composition.
 
 ### Usage
 
 ```ts
-import { Storage } from '../lib/storage';
+import { Storage } from '../primitives/storage';
 
 // Write a file
 await Storage.put('avatars/alice.png', imageBuffer);
@@ -679,7 +685,7 @@ const exists = await Storage.exists('avatars/alice.png');
 
 // Public URL
 const url = Storage.url('avatars/alice.png');
-// => http://localhost:3000/storage/avatars/alice.png
+// => /storage/avatars/alice.png
 
 // Delete
 await Storage.delete('avatars/alice.png');
@@ -687,15 +693,15 @@ await Storage.delete('avatars/alice.png');
 
 ### Drivers
 
-| Driver   | Default | Description |
-| -------- | ------- | ----------- |
-| `local`  | ✓       | Writes to `STORAGE_PATH` (default: `storage/`) |
-| `memory` | —       | In-memory `Map` — no filesystem side effects (great for tests) |
+| Driver  | Wired by default | Description |
+| ------- | ---------------- | ----------- |
+| `local` | ✓ (`src/storage/config.ts`) | Writes to `storage/` by default |
+| `s3`    | — | Available when you explicitly instantiate `S3Driver` in app composition |
 
 ### Registering a custom driver
 
 ```ts
-import { Storage, StorageDriver } from '../lib/storage';
+import { Storage, type StorageDriver } from '../primitives/storage';
 
 class S3Driver implements StorageDriver {
   async put(filePath: string, data: Buffer | string) { /* … */ }
@@ -705,13 +711,11 @@ class S3Driver implements StorageDriver {
   async exists(filePath: string) { /* … */ }
 }
 
-Storage.registerDriver('s3', new S3Driver());
-// Then set STORAGE_DRIVER=s3 in your env
+Storage.setDriver(new S3Driver());
 ```
 
 ### Environment variables
 
-| Variable        | Default               | Notes                        |
-| --------------- | --------------------- | ---------------------------- |
-| `STORAGE_DRIVER` | `local`              | Active storage driver        |
-| `STORAGE_PATH`   | `storage/`           | Base directory (local driver) |
+| Variable       | Default    | Notes |
+| -------------- | ---------- | ----- |
+| `STORAGE_PATH` | `storage/` | Base directory used by the code-configured local driver |

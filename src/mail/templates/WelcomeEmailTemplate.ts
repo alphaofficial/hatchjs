@@ -1,9 +1,9 @@
-export interface WelcomeEmailData {
+export interface WelcomeEmailTemplateData {
     name: string;
     appName?: string;
 }
 
-export function WelcomeEmail({ name, appName = 'The Boring Architecture' }: WelcomeEmailData): string {
+export function WelcomeEmailTemplate({ name, appName = 'The Boring Architecture' }: WelcomeEmailTemplateData): string {
     return `
         <h1>Welcome to ${appName}, ${name}!</h1>
         <p>We're glad to have you on board.</p>

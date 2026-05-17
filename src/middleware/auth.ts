@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { User } from '../models/User';
+import { User } from '@/models/User';
 
 export function auth(req: Request, res: Response, next: NextFunction) {
     if (req.is_authenticated()) {

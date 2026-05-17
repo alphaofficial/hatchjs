@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
-import { BaseController } from './BaseController';
-import { Hash } from '../utils/Hash';
-import { User } from '../models/User';
-import { PasswordReset } from '../models/PasswordReset';
-import { Session } from '../models/Session';
-import { Mailer } from '../lib/mail';
-import { Emitter } from '../lib/events';
+import { BaseController } from '@/controllers/BaseController';
+import { Hash } from '@/utils/Hash';
+import { User } from '@/models/User';
+import { PasswordReset } from '@/models/PasswordReset';
+import { Session } from '@/models/Session';
+import { Mailer } from '@/primitives/mail';
+import type { AppEvents } from '@/events/events';
+import { Emitter } from '@/primitives/events';
+import { ResetPasswordTemplate } from '@/mail/templates/ResetPasswordTemplate';
+import { VerifyEmailTemplate } from '@/mail/templates/VerifyEmailTemplate';
 import { z } from 'zod';
 import crypto from 'crypto';
-import variables from '../config/variables';
+import variables from '@/config/variables';
 
 // ---- email-verification token helpers ----
 
@@ -97,7 +100,7 @@ export class AuthController extends BaseController {
             }
 
             await req.authenticate(user);
-            Emitter.emit('user.login', { id: user.id, email: user.email });
+            Emitter.emit<AppEvents, 'user.login'>('user.login', { id: user.id, email: user.email });
             return res.redirect('/home');
 
         } catch (error) {
@@ -134,17 +137,16 @@ export class AuthController extends BaseController {
             );
 
             await em.persistAndFlush(user);
-            Emitter.emit('user.registered', { id: user.id, email: user.email });
+            Emitter.emit<AppEvents, 'user.registered'>('user.registered', { id: user.id, email: user.email });
 
             const token = makeVerificationToken(user.id, user.email);
             const appUrl = variables.APP_URL;
             const verifyUrl = `${appUrl}/verify-email/${token}`;
-            const html = `
-                <p>Welcome to ${variables.APP_NAME}!</p>
-                <p><a href="${verifyUrl}">Click here to verify your email address</a></p>
-                <p>If you did not create an account, please ignore this email.</p>
-            `;
-            await Mailer.send(user.email, 'Verify your email address', html);
+            const template = VerifyEmailTemplate({
+                verifyUrl,
+                appName: variables.APP_NAME,
+            });
+            await Mailer.send(user.email, 'Verify your email address', template);
 
             await req.authenticate(user);
             return res.redirect('/verify-email');
@@ -201,14 +203,12 @@ export class AuthController extends BaseController {
 
                 const appUrl = variables.APP_URL;
                 const resetUrl = `${appUrl}/reset-password/${rawToken}?email=${encodeURIComponent(email)}`;
-                const html = `
-                    <p>You requested a password reset for your account.</p>
-                    <p><a href="${resetUrl}">Click here to reset your password</a></p>
-                    <p>This link expires in ${variables.PASSWORD_RESET_EXPIRY} minutes.</p>
-                    <p>If you did not request this, please ignore this email.</p>
-                `;
+                const template = ResetPasswordTemplate({
+                    resetUrl,
+                    expiryMinutes: variables.PASSWORD_RESET_EXPIRY,
+                });
 
-                await Mailer.send(email, 'Password Reset Request', html);
+                await Mailer.send(email, 'Password Reset Request', template);
             }
 
             return controller.render('Auth/ForgotPassword', {
@@ -320,7 +320,7 @@ export class AuthController extends BaseController {
         if (!user.emailVerifiedAt) {
             user.emailVerifiedAt = new Date();
             await em.flush();
-            Emitter.emit('user.verified', { id: user.id, email: user.email });
+            Emitter.emit<AppEvents, 'user.verified'>('user.verified', { id: user.id, email: user.email });
         }
 
         return res.redirect('/home');
@@ -344,12 +344,11 @@ export class AuthController extends BaseController {
         const token = makeVerificationToken(user.id, user.email);
         const appUrl = variables.APP_URL;
         const verifyUrl = `${appUrl}/verify-email/${token}`;
-        const html = `
-            <p>Please verify your email address.</p>
-            <p><a href="${verifyUrl}">Click here to verify your email address</a></p>
-            <p>If you did not create an account, please ignore this email.</p>
-        `;
-        await Mailer.send(user.email, 'Verify your email address', html);
+        const template = VerifyEmailTemplate({
+            verifyUrl,
+            intro: 'Please verify your email address.',
+        });
+        await Mailer.send(user.email, 'Verify your email address', template);
 
         return controller.render('Auth/VerifyEmail', {
             email: user.email,

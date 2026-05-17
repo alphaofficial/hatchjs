@@ -1,10 +1,12 @@
-import { Storage, StorageDriver, S3Driver } from '@/lib/storage';
+import { Storage } from '@/primitives/storage';
+import type { StorageDriver } from '@/primitives/ports/storage';
+import { LocalDiskDriver } from '@/storage/driver/localDisk';
+import { S3Driver } from '@/storage/driver/s3';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { sdkStreamMixin } from '@smithy/util-stream';
 
 describe('storage (in-memory test driver)', () => {
-    let prevDriver: string | undefined;
     const store = new Map<string, Buffer>();
 
     const memoryDriver: StorageDriver = {
@@ -20,18 +22,12 @@ describe('storage (in-memory test driver)', () => {
     };
 
     beforeAll(() => {
-        prevDriver = process.env.STORAGE_DRIVER;
-        Storage.registerDriver('test-memory', memoryDriver);
-        process.env.STORAGE_DRIVER = 'test-memory';
-    });
-
-    afterAll(() => {
-        if (prevDriver === undefined) delete process.env.STORAGE_DRIVER;
-        else process.env.STORAGE_DRIVER = prevDriver;
+        Storage.setDriver(memoryDriver);
     });
 
     beforeEach(() => {
         store.clear();
+        Storage.setDriver(memoryDriver);
     });
 
     it('returns false for non-existent file', async () => {
@@ -71,7 +67,7 @@ describe('storage (in-memory test driver)', () => {
         expect(u).toContain('avatar.png');
     });
 
-    it('supports registerDriver with a custom driver', async () => {
+    it('supports setDriver with a custom driver', async () => {
         const data = new Map<string, Buffer>();
         const customDriver: StorageDriver = {
             put: async (p, d) => { data.set(p, Buffer.isBuffer(d) ? d : Buffer.from(d)); },
@@ -84,26 +80,15 @@ describe('storage (in-memory test driver)', () => {
             url: (p) => `https://cdn.example.com/${p}`,
             exists: async (p) => data.has(p),
         };
-        Storage.registerDriver('custom-storage', customDriver);
-        const prev = process.env.STORAGE_DRIVER;
-        try {
-            process.env.STORAGE_DRIVER = 'custom-storage';
-            await Storage.put('test.txt', 'custom');
-            expect((await Storage.get('test.txt')).toString()).toBe('custom');
-            expect(Storage.url('test.txt')).toBe('https://cdn.example.com/test.txt');
-        } finally {
-            process.env.STORAGE_DRIVER = prev;
-        }
+        Storage.setDriver(customDriver);
+        await Storage.put('test.txt', 'custom');
+        expect((await Storage.get('test.txt')).toString()).toBe('custom');
+        expect(Storage.url('test.txt')).toBe('https://cdn.example.com/test.txt');
     });
 
-    it('throws when an unregistered driver is selected', async () => {
-        const prev = process.env.STORAGE_DRIVER;
-        try {
-            process.env.STORAGE_DRIVER = 'nonexistent';
-            expect(() => Storage.exists('any')).toThrow("Storage driver 'nonexistent' is not registered");
-        } finally {
-            process.env.STORAGE_DRIVER = prev;
-        }
+    it('throws when no driver has been injected', async () => {
+        Storage.reset();
+        expect(() => Storage.url('any')).toThrow('Storage driver is not registered');
     });
 });
 
@@ -251,29 +236,51 @@ describe('S3Driver', () => {
         });
     });
 
-    describe('registration via Storage facade', () => {
-        let prevDriver: string | undefined;
-
-        beforeEach(() => {
-            prevDriver = process.env.STORAGE_DRIVER;
-        });
-
-        afterEach(() => {
-            if (prevDriver === undefined) delete process.env.STORAGE_DRIVER;
-            else process.env.STORAGE_DRIVER = prevDriver;
-        });
-
-        it('can be registered and used through the Storage facade', async () => {
+    describe('driver injection via Storage facade', () => {
+        it('can be injected and used through the Storage facade', async () => {
             const s3 = new S3Driver({ bucket: 'facade-bucket', region: 'eu-west-1' });
             const mockSend = jest.fn().mockResolvedValue({});
             (s3 as any).client.send = mockSend;
 
-            Storage.registerDriver('s3-test', s3);
-            process.env.STORAGE_DRIVER = 's3-test';
+            Storage.setDriver(s3);
 
             await Storage.put('test.txt', 'hello');
             expect(mockSend).toHaveBeenCalledTimes(1);
             expect(Storage.url('test.txt')).toBe('https://facade-bucket.s3.eu-west-1.amazonaws.com/test.txt');
         });
+    });
+});
+
+describe('storage config', () => {
+    afterEach(() => {
+        jest.resetModules();
+        jest.dontMock('@/config/variables');
+    });
+
+    it('always registers the local disk driver', async () => {
+        jest.doMock('@/config/variables', () => {
+            const actual = jest.requireActual('@/config/variables');
+            return {
+                ...actual,
+                default: {
+                    ...actual.default,
+                    STORAGE_DRIVER: 's3',
+                    AWS_S3_BUCKET: undefined,
+                },
+            };
+        });
+
+        const { configureStorageDriver } = await import('@/storage/config');
+        const { Storage } = await import('@/primitives/storage');
+
+        expect(() => configureStorageDriver()).not.toThrow();
+        expect(Storage.url('avatar.png')).toBe('/storage/avatar.png');
+    });
+});
+
+describe('LocalDiskDriver', () => {
+    it('defaults url() to an internal /storage path when no base URL is provided', () => {
+        const driver = new LocalDiskDriver();
+        expect(driver.url('avatar.png')).toBe('/storage/avatar.png');
     });
 });

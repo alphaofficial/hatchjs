@@ -1,5 +1,6 @@
 import supertest from "supertest";
 import crypto from "crypto";
+import { Mailer, type MailMessage } from "@/primitives/mail";
 import { bootstrapTestApp } from "../testHelpers";
 import { TestDataFactory } from "../testDataFactory";
 import { User } from "../../../src/models/User";
@@ -73,6 +74,12 @@ describe("Auth Flows Integration Tests", () => {
 
 		describe("POST /forgot-password", () => {
 			it("accepts a valid email and returns a success status", async () => {
+				const sent: MailMessage[] = [];
+				Mailer.setDriver({
+					sendMail: async (message) => {
+						sent.push(message);
+					},
+				});
 				await testDataFactory.createUser({ email: "reset@example.com" });
 
 				const response = await supertest(app)
@@ -88,6 +95,10 @@ describe("Auth Flows Integration Tests", () => {
 				const em = database.em.fork();
 				const reset = await em.findOne(PasswordReset, { email: "reset@example.com" });
 				expect(reset).not.toBeNull();
+				expect(sent).toHaveLength(1);
+				expect(sent[0].subject).toBe("Password Reset Request");
+				expect(sent[0].html).toContain("You requested a password reset for your account.");
+				expect(sent[0].html).toContain("/reset-password/");
 			});
 
 			it("returns the same success response for a non-existent email (no enumeration)", async () => {
@@ -315,6 +326,12 @@ describe("Auth Flows Integration Tests", () => {
 
 		describe("POST /email/resend-verification", () => {
 			it("resends the verification email for an unverified user", async () => {
+				const sent: MailMessage[] = [];
+				Mailer.setDriver({
+					sendMail: async (message) => {
+						sent.push(message);
+					},
+				});
 				const user = await testDataFactory.createUser({ email: "resend@example.com" });
 				const agent = supertest.agent(app);
 				await agent.post("/login").send({ email: user.email, password: "password123" });
@@ -324,6 +341,10 @@ describe("Auth Flows Integration Tests", () => {
 				const pageData = extractInertiaPageData(response.text);
 				expect(pageData.component).toBe("Auth/VerifyEmail");
 				expect(pageData.props.status).toMatch(/sent/i);
+				expect(sent).toHaveLength(1);
+				expect(sent[0].subject).toBe("Verify your email address");
+				expect(sent[0].html).toContain("Please verify your email address.");
+				expect(sent[0].html).toContain("/verify-email/");
 			});
 
 			it("returns a message if the email is already verified", async () => {
