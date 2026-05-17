@@ -1,7 +1,7 @@
 import { Storage } from '@/primitives/storage';
 import type { StorageDriver } from '@/primitives/ports/storage';
-import { LocalDiskDriver } from '@/storage/driver/localDisk';
-import { S3Driver } from '@/storage/driver/s3';
+import { LocalDiskDriver } from '@/storage/drivers/localDisk';
+import { S3Driver } from '@/storage/drivers/s3';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { sdkStreamMixin } from '@smithy/util-stream';

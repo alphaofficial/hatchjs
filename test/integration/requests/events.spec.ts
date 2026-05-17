@@ -1,6 +1,6 @@
 import { registerAppEventHandlers } from '@/events/events';
 import type { AppEvents } from '@/events/events';
-import { NodeEventDriver } from '@/events/driver/node';
+import { NodeEventDriver } from '@/events/drivers/node';
 import { Emitter } from '@/primitives/events';
 import type { EventEngine } from '@/primitives/ports/events';
 import { Queue } from '@/primitives/queue';

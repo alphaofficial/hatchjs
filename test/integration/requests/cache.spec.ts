@@ -1,4 +1,4 @@
-import { MemoryCache } from '@/cache/driver/memory';
+import { MemoryCache } from '@/cache/drivers/memory';
 import { Cache, CacheDriver } from '@/primitives/cache';
 
 describe('cache (in-memory driver)', () => {
